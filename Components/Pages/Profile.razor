@@ -1,0 +1,250 @@
+﻿@page "/profile"
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudText Typo="Typo.h4" Class="mb-6">Profile Settings</MudText>
+
+    <MudGrid>
+        <!-- Profile Information Card -->
+        <MudItem xs="12" md="4">
+            <MudPaper Elevation="2" Class="pa-6">
+                <div class="d-flex flex-column align-center">
+                    <MudAvatar Color="Color.Primary" Size="Size.Large" Style="width: 120px; height: 120px; font-size: 3rem;">
+                        @GetInitials(_fullName)
+                    </MudAvatar>
+                    <MudText Typo="Typo.h5" Class="mt-4">@_fullName</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Default">@_email</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Default" Class="mt-2">
+                        Member since @_memberSince.ToString("MMMM yyyy")
+                    </MudText>
+
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.CameraAlt"
+                               Class="mt-4"
+                               FullWidth="true">
+                        Change Photo
+                    </MudButton>
+                </div>
+            </MudPaper>
+        </MudItem>
+
+        <!-- Profile Form -->
+        <MudItem xs="12" md="8">
+            <MudPaper Elevation="2" Class="pa-6">
+                <MudText Typo="Typo.h6" Class="mb-4">Personal Information</MudText>
+
+                <MudForm @ref="_form" @bind-IsValid="@_isValid">
+                    <MudGrid>
+                        <MudItem xs="12" sm="6">
+                            <MudTextField @bind-Value="_fullName"
+                                          Label="Full Name"
+                                          Variant="Variant.Outlined"
+                                          Required="true"
+                                          RequiredError="Name is required" />
+                        </MudItem>
+
+                        <MudItem xs="12" sm="6">
+                            <MudTextField @bind-Value="_email"
+                                          Label="Email"
+                                          Variant="Variant.Outlined"
+                                          InputType="InputType.Email"
+                                          Required="true"
+                                          RequiredError="Email is required" />
+                        </MudItem>
+
+                        <MudItem xs="12" sm="6">
+                            <MudTextField @bind-Value="_phone"
+                                          Label="Phone Number"
+                                          Variant="Variant.Outlined" />
+                        </MudItem>
+
+                        <MudItem xs="12" sm="6">
+                            <MudDatePicker @bind-Date="_dateOfBirth"
+                                           Label="Date of Birth"
+                                           Variant="Variant.Outlined"
+                                           Editable="true" />
+                        </MudItem>
+
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="_bio"
+                                          Label="Bio"
+                                          Variant="Variant.Outlined"
+                                          Lines="4"
+                                          MaxLength="500"
+                                          Counter="500" />
+                        </MudItem>
+                    </MudGrid>
+
+                    <div class="d-flex justify-end mt-6 gap-2">
+                        <MudButton Variant="Variant.Text"
+                                   OnClick="ResetForm">
+                            Cancel
+                        </MudButton>
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   OnClick="SaveProfile"
+                                   Disabled="@(!_isValid || _isSaving)">
+                            @if (_isSaving)
+                            {
+                                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            }
+                            Save Changes
+                        </MudButton>
+                    </div>
+                </MudForm>
+            </MudPaper>
+
+            <!-- Change Password Card -->
+            <MudPaper Elevation="2" Class="pa-6 mt-4">
+                <MudText Typo="Typo.h6" Class="mb-4">Change Password</MudText>
+
+                <MudForm @ref="_passwordForm">
+                    <MudGrid>
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="_currentPassword"
+                                          Label="Current Password"
+                                          Variant="Variant.Outlined"
+                                          InputType="InputType.Password" />
+                        </MudItem>
+
+                        <MudItem xs="12" sm="6">
+                            <MudTextField @bind-Value="_newPassword"
+                                          Label="New Password"
+                                          Variant="Variant.Outlined"
+                                          InputType="InputType.Password" />
+                        </MudItem>
+
+                        <MudItem xs="12" sm="6">
+                            <MudTextField @bind-Value="_confirmNewPassword"
+                                          Label="Confirm New Password"
+                                          Variant="Variant.Outlined"
+                                          InputType="InputType.Password" />
+                        </MudItem>
+                    </MudGrid>
+
+                    <div class="d-flex justify-end mt-4">
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   OnClick="ChangePassword">
+                            Update Password
+                        </MudButton>
+                    </div>
+                </MudForm>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private MudForm? _form;
+    private MudForm? _passwordForm;
+    private bool _isValid;
+    private bool _isSaving;
+
+    // Profile fields
+    private string _fullName = "John Doe";
+    private string _email = "john.doe@example.com";
+    private string _phone = "+1 234 567 8900";
+    private DateTime? _dateOfBirth = new DateTime(1990, 1, 1);
+    private string _bio = "Journal enthusiast and productivity advocate.";
+    private DateTime _memberSince = new DateTime(2024, 1, 15);
+
+    // Password fields
+    private string _currentPassword = "";
+    private string _newPassword = "";
+    private string _confirmNewPassword = "";
+
+    // Store original values for reset
+    private string _originalFullName = "John Doe";
+    private string _originalEmail = "john.doe@example.com";
+    private string _originalPhone = "+1 234 567 8900";
+    private DateTime? _originalDateOfBirth = new DateTime(1990, 1, 1);
+    private string _originalBio = "Journal enthusiast and productivity advocate.";
+
+    string GetInitials(string name)
+    {
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0) return "?";
+        if (parts.Length == 1) return parts[0][0].ToString().ToUpper();
+        return $"{parts[0][0]}{parts[^1][0]}".ToUpper();
+    }
+
+    void ResetForm()
+    {
+        _fullName = _originalFullName;
+        _email = _originalEmail;
+        _phone = _originalPhone;
+        _dateOfBirth = _originalDateOfBirth;
+        _bio = _originalBio;
+        Snackbar.Add("Changes discarded", Severity.Info);
+    }
+
+    async Task SaveProfile()
+    {
+        if (!_isValid) return;
+
+        _isSaving = true;
+
+        try
+        {
+            // Simulate API call
+            await Task.Delay(1000);
+
+            // TODO: Implement actual profile update logic
+
+            // Update original values
+            _originalFullName = _fullName;
+            _originalEmail = _email;
+            _originalPhone = _phone;
+            _originalDateOfBirth = _dateOfBirth;
+            _originalBio = _bio;
+
+            Snackbar.Add("Profile updated successfully!", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to update profile: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    async Task ChangePassword()
+    {
+        if (string.IsNullOrWhiteSpace(_currentPassword) ||
+            string.IsNullOrWhiteSpace(_newPassword) ||
+            string.IsNullOrWhiteSpace(_confirmNewPassword))
+        {
+            Snackbar.Add("Please fill in all password fields", Severity.Warning);
+            return;
+        }
+
+        if (_newPassword != _confirmNewPassword)
+        {
+            Snackbar.Add("New passwords do not match", Severity.Error);
+            return;
+        }
+
+        try
+        {
+            // Simulate API call
+            await Task.Delay(1000);
+
+            // TODO: Implement actual password change logic
+
+            // Clear password fields
+            _currentPassword = "";
+            _newPassword = "";
+            _confirmNewPassword = "";
+
+            Snackbar.Add("Password changed successfully!", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to change password: {ex.Message}", Severity.Error);
+        }
+    }
+}

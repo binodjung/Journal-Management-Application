@@ -1,11 +1,11 @@
 ﻿@inherits LayoutComponentBase
+@inject NavigationManager Navigation
 
 <MudThemeProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
 <MudLayout>
-
     <!-- AppBar -->
     <MudAppBar Elevation="1" Color="Color.Primary">
         <MudIconButton Icon="@Icons.Material.Filled.Menu"
@@ -13,6 +13,33 @@
                        Edge="Edge.Start"
                        OnClick="ToggleDrawer" />
         <MudText Typo="Typo.h6">Journal Application</MudText>
+        <MudSpacer />
+
+        <!-- Profile Section -->
+        <MudMenu AnchorOrigin="Origin.BottomRight"
+                 TransformOrigin="Origin.TopRight"
+                 Dense="true">
+            <ActivatorContent>
+                <MudChip T="string" Color="Color.Secondary"
+                         Icon="@Icons.Material.Filled.Person"
+                         Variant="Variant.Filled"
+                         Style="cursor: pointer;">
+                    @CurrentUser.Name
+                </MudChip>
+            </ActivatorContent>
+            <ChildContent>
+                <MudMenuItem Icon="@Icons.Material.Filled.AccountCircle"
+                             OnClick="NavigateToProfile">
+                    Profile
+                </MudMenuItem>
+                <MudDivider />
+                <MudMenuItem Icon="@Icons.Material.Filled.Logout"
+                             OnClick="Logout"
+                             IconColor="Color.Error">
+                    Logout
+                </MudMenuItem>
+            </ChildContent>
+        </MudMenu>
     </MudAppBar>
 
     <!-- Sidebar / Drawer -->
@@ -22,7 +49,6 @@
         <MudDrawerHeader>
             <MudText Typo="Typo.h6">Menu</MudText>
         </MudDrawerHeader>
-
         <MudNavMenu>
             @foreach (var item in MenuItems)
             {
@@ -39,15 +65,45 @@
     <MudMainContent Class="pa-4">
         @Body
     </MudMainContent>
-
 </MudLayout>
 
 @code {
     private bool _drawerOpen = true;
 
+    // private MudTheme _theme = new MudTheme()
+    // {
+    //     Palette = new PaletteLight()
+    //     {
+    //         Primary = "#1976D2",
+    //         Secondary = "#424242",
+    //         AppbarBackground = "#1976D2",
+    //     },
+    //     PaletteDark = new PaletteDark()
+    //     {
+    //         Primary = "#90CAF9",
+    //         Secondary = "#616161",
+    //     }
+    // };
+
+    // Mock current user - Replace with actual authentication service
+    private UserInfo CurrentUser = new UserInfo("John Doe", "john.doe@example.com");
+
     void ToggleDrawer()
     {
         _drawerOpen = !_drawerOpen;
+    }
+
+    void NavigateToProfile()
+    {
+        Navigation.NavigateTo("/profile");
+    }
+
+    void Logout()
+    {
+        // TODO: Implement actual logout logic
+        // Clear authentication state
+        // Redirect to login
+        Navigation.NavigateTo("/login");
     }
 
     private List<MenuItem> MenuItems = new()
@@ -55,8 +111,8 @@
         new MenuItem("Dashboard", "/", Icons.Material.Filled.Dashboard),
         new MenuItem("Journals", "/journals", Icons.Material.Filled.Book),
         new MenuItem("Calendar", "/calendar", Icons.Material.Filled.CalendarMonth),
-        new MenuItem("Settings", "/settings", Icons.Material.Filled.Settings)
     };
 
     public record MenuItem(string Title, string Route, string Icon);
+    public record UserInfo(string Name, string Email);
 }
