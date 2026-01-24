@@ -1,4 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
+using MudBlazor.Services;
+
 
 namespace JournalApplication
 {
@@ -19,6 +21,8 @@ namespace JournalApplication
 #if DEBUG
     		builder.Services.AddBlazorWebViewDeveloperTools();
     		builder.Logging.AddDebug();
+            builder.Services.AddMudServices();
+
 #endif
 
             return builder.Build();
