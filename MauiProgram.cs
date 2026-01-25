@@ -26,6 +26,7 @@ namespace JournalApplication
 
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddDbContext<AppDbContext>();
+            builder.Services.AddSingleton<UserSessionService>();
             builder.Services.AddMudServices();
 
 
