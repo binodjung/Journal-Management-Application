@@ -1,0 +1,66 @@
+﻿@page "/journals/create"
+
+<MudText Typo="Typo.h4" Class="mb-4">Create Journal</MudText>
+
+<MudPaper Class="pa-4" Elevation="2" MaxWidth="500px">
+
+    <MudTextField Label="Title"
+                  @bind-Value="Title"
+                  Required="true" />
+
+    <MudTextField Label="Content"
+                  Lines="6"
+                  @bind-Value="Content"
+                  Required="true" />
+
+    <MudSelect T="string"
+               Label="Primary Mood"
+               @bind-Value="PrimaryMood"
+               Required="true">
+        @foreach (var mood in Moods)
+        {
+            <MudSelectItem Value="@mood">@mood</MudSelectItem>
+        }
+    </MudSelect>
+
+    @* <MudSelect T="string"
+               Label="Tags"
+               MultiSelection="true"
+               @bind-SelectedValues="SelectedTags">
+        @foreach (var tag in Tags)
+        {
+            <MudSelectItem Value="@tag">@tag</MudSelectItem>
+        }
+    </MudSelect> *@
+
+    <MudStack Row="true" Spacing="2" Class="mt-4">
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled">
+            Save
+        </MudButton>
+
+        <MudButton Variant="Variant.Outlined"
+                   Href="/journals">
+            Cancel
+        </MudButton>
+    </MudStack>
+
+</MudPaper>
+
+@code {
+
+    string Title;
+    string Content;
+    string PrimaryMood;
+    HashSet<string> SelectedTags = new();
+
+    List<string> Moods = new()
+    {
+        "Happy","Excited","Calm","Sad","Angry","Stressed"
+    };
+
+    List<string> Tags = new()
+    {
+        "Work","Health","Travel","Family","Fitness","Study"
+    };
+}
