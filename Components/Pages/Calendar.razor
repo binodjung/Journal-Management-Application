@@ -1,4 +1,206 @@
 ﻿@page "/calendar"
+@using MudBlazor
 
-<MudText Typo="Typo.h4">Calendar</MudText>
-<MudText>Calendar view of journal entries.</MudText>
+<MudGrid>
+    <MudItem xs="12">
+        <MudText Typo="Typo.h4" Class="mb-4">Journal Calendar</MudText>
+    </MudItem>
+</MudGrid>
+
+<MudGrid>
+    <!-- Calendar Section -->
+    <MudItem xs="12" md="8">
+        <MudPaper Class="pa-4" Elevation="2">
+            <div class="d-flex justify-space-between mb-2">
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="PreviousMonth">
+                    <MudIcon Icon="@Icons.Material.Filled.ChevronLeft" />
+                </MudButton>
+                <MudText Typo="Typo.h6">@_currentMonth.ToString("MMMM yyyy")</MudText>
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="NextMonth">
+                    <MudIcon Icon="@Icons.Material.Filled.ChevronRight" />
+                </MudButton>
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:6px;">
+                @foreach (var dayName in _dayNames)
+                {
+                    <MudText Typo="Typo.subtitle2" Align="Align.Center">
+                        @dayName
+                    </MudText>
+                }
+            </div>
+
+
+            <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:6px;">
+                @foreach (var day in GetDaysInMonth(_currentMonth))
+                {
+                    if (day != null)
+                    {
+                        <MudButton Variant="@GetDayVariant(day.Value)"
+                                   Color="@GetDayColor(day.Value)"
+                                   Size="Size.Small"
+                                   FullWidth
+                                   OnClick="() => SelectDate(day.Value)">
+                            @day.Value.Day
+                        </MudButton>
+                    }
+                    else
+                    {
+                        <div></div>
+                    }
+                }
+            </div>
+
+        </MudPaper>
+
+        <!-- Legend -->
+        <MudPaper Class="pa-3 mt-3" Elevation="1">
+            <MudText Typo="Typo.subtitle2" Class="mb-2">Mood Legend:</MudText>
+            <MudGrid Spacing="2">
+                <MudItem>
+                    <MudChip T="string" Size="Size.Small" Color="Color.Success">Positive</MudChip>
+                </MudItem>
+                <MudItem>
+                    <MudChip T="string" Size="Size.Small" Color="Color.Default">Neutral</MudChip>
+                </MudItem>
+                <MudItem>
+                    <MudChip T="string" Size="Size.Small" Color="Color.Error">Negative</MudChip>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    </MudItem>
+
+    <!-- Selected Date Entry Details -->
+    <MudItem xs="12" md="4">
+        <MudPaper Class="pa-4" Elevation="2" Style="min-height: 400px;">
+            <MudText Typo="Typo.h6" Class="mb-3">
+                @_selectedDate.ToString("MMMM dd, yyyy")
+            </MudText>
+
+            @if (_selectedEntry != null)
+            {
+                <MudDivider Class="mb-3" />
+                <MudText Typo="Typo.h6">@_selectedEntry.Title</MudText>
+                <MudChip T="string" Size="Size.Small" Color="@GetEntryMoodColor(_selectedEntry)" Class="mb-3">
+                    @_selectedEntry.PrimaryMood
+                </MudChip>
+                <MudText Typo="Typo.body2">@_selectedEntry.Content</MudText>
+
+                @if (_selectedEntry.Tags.Any())
+                {
+                    <MudText Typo="Typo.caption" Class="mb-2">Tags:</MudText>
+                    <div class="d-flex flex-wrap gap-1 mb-3">
+                        @foreach (var tag in _selectedEntry.Tags)
+                        {
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@tag</MudChip>
+                        }
+                    </div>
+                }
+
+                <MudDivider Class="my-3" />
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" OnClick="ViewFullEntry">
+                    View Full
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Info" Size="Size.Small" OnClick="EditEntry">
+                    Edit
+                </MudButton>
+            }
+            else
+            {
+                <MudText Typo="Typo.body2" Color="Color.Default" Class="mt-4">
+                    No journal entry for this date.
+                </MudText>
+
+                @if (_selectedDate.Date == DateTime.Today)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" Href="/journals/create">
+                        Create Today's Entry
+                    </MudButton>
+                }
+            }
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    DateTime _selectedDate = DateTime.Today;
+    DateTime _currentMonth = DateTime.Today;
+
+    string[] _dayNames = new[] { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+    JournalEntry _selectedEntry;
+
+    List<JournalEntry> JournalEntries = new()
+    {
+        new() { Date = DateTime.Today, Title = "Good Day", Content = "Worked hard.", PrimaryMood = "Happy", MoodCategory = "Positive", Tags = new() { "Work" } },
+        new() { Date = DateTime.Today.AddDays(-1), Title = "Gym", Content = "Workout session.", PrimaryMood = "Excited", MoodCategory = "Positive", Tags = new() { "Fitness" } },
+        new() { Date = DateTime.Today.AddDays(-2), Title = "Family", Content = "Spent time with family.", PrimaryMood = "Calm", MoodCategory = "Neutral", Tags = new() { "Family" } },
+    };
+
+    protected override void OnInitialized()
+    {
+        SelectDate(_selectedDate);
+    }
+
+    void SelectDate(DateTime date)
+    {
+        _selectedDate = date;
+        _selectedEntry = JournalEntries.FirstOrDefault(e => e.Date.Date == date.Date);
+    }
+
+    IEnumerable<DateTime?> GetDaysInMonth(DateTime month)
+    {
+        var days = new List<DateTime?>();
+        var firstDay = new DateTime(month.Year, month.Month, 1);
+        int leadingEmpty = (int)firstDay.DayOfWeek;
+
+        // Empty placeholders for alignment
+        for (int i = 0; i < leadingEmpty; i++)
+            days.Add(null);
+
+        int daysInMonth = DateTime.DaysInMonth(month.Year, month.Month);
+        for (int d = 1; d <= daysInMonth; d++)
+            days.Add(new DateTime(month.Year, month.Month, d));
+
+        return days;
+    }
+
+    void PreviousMonth() => _currentMonth = _currentMonth.AddMonths(-1);
+    void NextMonth() => _currentMonth = _currentMonth.AddMonths(1);
+
+    Color GetDayColor(DateTime day)
+    {
+        var entry = JournalEntries.FirstOrDefault(e => e.Date.Date == day.Date);
+        if (entry == null) return Color.Default;
+
+        return entry.MoodCategory switch
+        {
+            "Positive" => Color.Success,
+            "Neutral" => Color.Default,
+            "Negative" => Color.Error,
+            _ => Color.Default
+        };
+    }
+
+    Variant GetDayVariant(DateTime day) => day.Date == _selectedDate.Date ? Variant.Filled : Variant.Text;
+
+    Color GetEntryMoodColor(JournalEntry entry) => entry.MoodCategory switch
+    {
+        "Positive" => Color.Success,
+        "Neutral" => Color.Default,
+        "Negative" => Color.Error,
+        _ => Color.Default
+    };
+
+    void ViewFullEntry() { /* Navigate to full entry */ }
+    void EditEntry() { /* Navigate to edit page */ }
+
+    public class JournalEntry
+    {
+        public DateTime Date { get; set; }
+        public string Title { get; set; }
+        public string Content { get; set; }
+        public string PrimaryMood { get; set; }
+        public string MoodCategory { get; set; }
+        public List<string> Tags { get; set; } = new();
+    }
+}

@@ -1,64 +1,73 @@
 ﻿@page "/journals"
 @using MudBlazor
 
-<MudText Typo="Typo.h4" Class="mb-4">Journals</MudText>
+<!-- Page Title & Create Button -->
+<MudGrid Class="mb-4" AlignItems="Center">
+    <MudItem xs="6">
+        <MudText Typo="Typo.h4">Journals</MudText>
+    </MudItem>
+    <MudItem xs="6" Class="d-flex justify-end">
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   Href="/journals/create">
+            Create Journal
+        </MudButton>
+    </MudItem>
+</MudGrid>
 
-<!-- Top Bar: Title and Create Button -->
-<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
-    <MudText Typo="Typo.h4">Journals</MudText>
-    <MudButton Variant="Variant.Filled"
-               Color="Color.Primary"
-               StartIcon="@Icons.Material.Filled.Add"
-               Href="/journals/create">
-        Create Journal
-    </MudButton>
-</MudStack>
-
-<!-- Filters -->
-<MudStack Row="true" Spacing="2" Class="mb-4">
-    <MudTextField @bind-Value="_search"
-                  Placeholder="Search title or content..."
-                  Adornment="Adornment.Start"
-                  AdornmentIcon="@Icons.Material.Filled.Search"
-                  Immediate="true"
-                  Class="mud-width-full mud-width-sm-6" />
-
-    <MudDateRangePicker @bind-DateRange="_dateRange"
-                        Label="Date Range"
-                        Class="mud-width-full mud-width-sm-3" />
-
-    <MudSelect T="string"
-               Label="Mood"
-               @bind-Value="_selectedMood"
-               Clearable="true"
-               Class="mud-width-full mud-width-sm-2">
-        @foreach (var mood in Moods)
-        {
-            <MudSelectItem Value="@mood">@mood</MudSelectItem>
-        }  
-
-    </MudSelect>
-
-    <MudSelect T="string"
-               Label="Tag"
-               @bind-Value="_selectedTag"
-               Clearable="true"
-               Class="mud-width-full mud-width-sm-2">
-        @foreach (var tag in Tags)
-        {
-            <MudSelectItem Value="@tag">@tag</MudSelectItem>
-        }
-    </MudSelect>
-</MudStack>
+<!-- Filters inside a Card -->
+<MudPaper Class="pa-3 mb-4" Elevation="1">
+    <MudGrid GutterSize="2" AlignItems="Center">
+        <MudItem xs="12" sm="4">
+            <MudTextField @bind-Value="_search"
+                          Placeholder="Search title or content..."
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          Immediate="true"
+                          FullWidth="true" />
+        </MudItem>
+        <MudItem xs="12" sm="3">
+            <MudDateRangePicker @bind-DateRange="_dateRange"
+                                Label="Date Range"
+                                Class="mud-width-full" />
+        </MudItem>
+        <MudItem xs="12" sm="2">
+            <MudSelect T="string"
+                       Label="Mood"
+                       @bind-Value="_selectedMood"
+                       Clearable="true"
+                       FullWidth="true">
+                @foreach (var mood in Moods)
+                {
+                    <MudSelectItem Value="@mood">@mood</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="2">
+            <MudSelect T="string"
+                       Label="Tag"
+                       @bind-Value="_selectedTag"
+                       Clearable="true"
+                       FullWidth="true">
+                @foreach (var tag in Tags)
+                {
+                    <MudSelectItem Value="@tag">@tag</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
 
 
-<!-- Table -->
+<!-- Journals Table -->
 <MudTable Items="FilteredJournals"
           Dense="true"
           Hover="true"
           Bordered="true"
           Striped="true"
-          RowsPerPage="5">
+          RowsPerPage="5"
+          Elevation="1">
 
     <HeaderContent>
         <MudTh>Date</MudTh>
@@ -73,21 +82,22 @@
         <MudTd>@context.Title</MudTd>
         <MudTd>@context.PrimaryMood</MudTd>
         <MudTd>@string.Join(", ", context.Tags)</MudTd>
-        <MudTd>
+        <MudTd Class="d-flex gap-1">
             <MudIconButton Icon="@Icons.Material.Filled.Visibility"
                            Color="Color.Primary"
                            Size="Size.Small"
-                           OnClick="@(() => ViewJournal(context))" />
-
+                           OnClick="@(() => ViewJournal(context))"
+                           ToolTip="View" />
             <MudIconButton Icon="@Icons.Material.Filled.Edit"
                            Color="Color.Info"
                            Size="Size.Small"
-                           OnClick="@(() => EditJournal(context))" />
-
+                           OnClick="@(() => EditJournal(context))"
+                           ToolTip="Edit" />
             <MudIconButton Icon="@Icons.Material.Filled.Delete"
                            Color="Color.Error"
                            Size="Size.Small"
-                           OnClick="@(() => ConfirmDeleteJournal(context))" />
+                           OnClick="@(() => ConfirmDeleteJournal(context))"
+                           ToolTip="Delete" />
         </MudTd>
     </RowTemplate>
 
@@ -101,11 +111,12 @@
     <DialogContent>
         <MudText Typo="Typo.h6">Are you sure you want to delete this journal entry?</MudText>
     </DialogContent>
-    <DialogActions>
+    <DialogActions >
         <MudButton Color="Color.Primary" Variant="Variant.Text" OnClick="() => _deleteDialogVisible = false">Cancel</MudButton>
         <MudButton Color="Color.Error" Variant="Variant.Filled" OnClick="DeleteJournalConfirmed">Delete</MudButton>
     </DialogActions>
 </MudDialog>
+
 
 @code {
     string _search;

@@ -1,4 +1,309 @@
-﻿@page "/"
+﻿@page "/dashboard"
+@using MudBlazor
 
-<MudText Typo="Typo.h4">Dashboard</MudText>
-<MudText>Analytics and overview will appear here.</MudText>
+<MudGrid Class="mt-5">
+    <MudItem xs="12">
+        <MudText Typo="Typo.h4" Class="mb-2">Dashboard</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Default">Welcome back! Here's your journaling overview.</MudText>
+    </MudItem>
+</MudGrid>
+
+<!-- Quick Stats Cards -->
+<MudGrid Class="mt-6" Spacing="3">
+
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Class="pa-5 rounded-xl" Elevation="3">
+            <MudStack Spacing="1">
+
+                <MudStack Direction="Row" class = "d-flex align-center" Spacing="1">
+                    <MudIcon Icon="@Icons.Material.Filled.LocalFireDepartment"
+                             Color="Color.Warning"
+                             Size="Size.Medium" />
+                    <MudText Typo="Typo.subtitle1">Current Streak</MudText>
+                </MudStack>
+
+                <MudText Typo="Typo.h3" Color="Color.Warning">
+                    @_currentStreak
+                </MudText>
+
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    days
+                </MudText>
+
+            </MudStack>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Class="pa-5 rounded-xl" Elevation="3">
+            <MudStack Spacing="1">
+
+                <MudStack Direction="Row" class = "d-flex align-center" Spacing="1">
+                    <MudIcon Icon="@Icons.Material.Filled.EmojiEvents"
+                             Color="Color.Success"
+                             Size="Size.Medium" />
+                    <MudText Typo="Typo.subtitle1">Longest Streak</MudText>
+                </MudStack>
+
+                <MudText Typo="Typo.h3" Color="Color.Success">
+                    @_longestStreak
+                </MudText>
+
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    days
+                </MudText>
+
+            </MudStack>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Class="pa-5 rounded-xl" Elevation="3">
+            <MudStack Spacing="1">
+
+                <MudStack Direction="Row" class = "d-flex align-center" Spacing="1">
+                    <MudIcon Icon="@Icons.Material.Filled.Book"
+                             Color="Color.Primary"
+                             Size="Size.Medium" />
+                    <MudText Typo="Typo.subtitle1">Total Entries</MudText>
+                </MudStack>
+
+                <MudText Typo="Typo.h3" Color="Color.Primary">
+                    @_totalEntries
+                </MudText>
+
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    journals
+                </MudText>
+
+            </MudStack>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Class="pa-5 rounded-xl" Elevation="3">
+            <MudStack Spacing="1">
+
+                <MudStack Direction="Row" class = "d-flex align-center" Spacing="1">
+                    <MudIcon Icon="@Icons.Material.Filled.CalendarMonth"
+                             Color="Color.Error"
+                             Size="Size.Medium" />
+                    <MudText Typo="Typo.subtitle1">Missed Days</MudText>
+                </MudStack>
+
+                <MudText Typo="Typo.h3" Color="Color.Error">
+                    @_missedDays
+                </MudText>
+
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    this month
+                </MudText>
+
+            </MudStack>
+        </MudPaper>
+    </MudItem>
+
+</MudGrid>
+
+
+<!-- Charts Section -->
+<MudGrid Class="mt-4">
+    <!-- Mood Distribution -->
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4" Elevation="2">
+            <MudText Typo="Typo.h6" Class="mb-3">Mood Distribution</MudText>
+            <MudChart ChartType="ChartType.Pie" 
+                      Width="100%" 
+                      Height="300px"
+                      InputData="@_moodData" 
+                      InputLabels="@_moodLabels">
+                <CustomGraphics>
+                    <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="currentColor" font-size="24">
+                        @_totalEntries
+                    </text>
+                    <text x="50%" y="55%" dominant-baseline="hanging" text-anchor="middle" fill="currentColor" font-size="12">
+                        Entries
+                    </text>
+                </CustomGraphics>
+            </MudChart>
+        </MudPaper>
+    </MudItem>
+
+    <!-- Most Frequent Mood -->
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4" Elevation="2">
+            <MudText Typo="Typo.h6" Class="mb-3">Top Moods</MudText>
+            <MudChart ChartType="ChartType.Bar" 
+                      Width="100%" 
+                      Height="300px"
+                      ChartOptions="@_chartOptions"
+                      InputData="@_topMoodsData" 
+                      InputLabels="@_topMoodsLabels" />
+        </MudPaper>
+    </MudItem>
+
+    <!-- Most Used Tags -->
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4" Elevation="2">
+            <MudText Typo="Typo.h6" Class="mb-3">Most Used Tags</MudText>
+            <MudChart ChartType="ChartType.Bar" 
+                      Width="100%" 
+                      Height="300px"
+                      ChartOptions="@_chartOptions"
+                      InputData="@_tagData" 
+                      InputLabels="@_tagLabels" />
+        </MudPaper>
+    </MudItem>
+
+    <!-- Word Count Trend -->
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4" Elevation="2">
+            <MudText Typo="Typo.h6" Class="mb-3">Word Count Trends</MudText>
+            <MudChart ChartType="ChartType.Line" 
+                      Width="100%" 
+                      Height="300px"
+                      ChartOptions="@_lineChartOptions"
+                      InputData="@_wordCountData" 
+                      InputLabels="@_wordCountLabels" />
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+<!-- Recent Entries -->
+<MudGrid Class="mt-4">
+    <MudItem xs="12">
+        <MudPaper Class="pa-4" Elevation="2">
+            <div class="d-flex justify-space-between align-center mb-3">
+                <MudText Typo="Typo.h6">Recent Entries</MudText>
+                <MudButton Variant="Variant.Text" 
+                           Color="Color.Primary" 
+                           EndIcon="@Icons.Material.Filled.ArrowForward"
+                           Href="/journals">
+                    View All
+                </MudButton>
+            </div>
+            
+            <MudDivider Class="mb-3" />
+            
+            @foreach (var entry in _recentEntries)
+            {
+                <MudPaper Class="pa-3 mb-2" Elevation="0" Style="border: 1px solid var(--mud-palette-divider);">
+                    <div class="d-flex justify-space-between align-center">
+                        <div>
+                            <MudText Typo="Typo.subtitle1">@entry.Title</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Default">
+                                @entry.Date.ToString("MMM dd, yyyy")
+                            </MudText>
+                        </div>
+                        <div class="d-flex align-center gap-2">
+                            <MudChip T="string" Size="Size.Small" Color="GetMoodColor(entry.MoodCategory)">
+                                @entry.PrimaryMood
+                            </MudChip>
+
+                            <MudIconButton Icon="@Icons.Material.Filled.ArrowForward" 
+                                           Size="Size.Small"
+                                           OnClick="@(() => ViewEntry(entry))" />
+                        </div>
+                    </div>
+                </MudPaper>
+            }
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    [Inject] NavigationManager NavigationManager { get; set; }
+
+    // Stats
+    int _currentStreak = 5;
+    int _longestStreak = 12;
+    int _totalEntries = 24;
+    int _missedDays = 3;
+
+    // Mood Distribution (Pie Chart)
+    double[] _moodData = { 45, 30, 25 };
+    string[] _moodLabels = { "Positive", "Neutral", "Negative" };
+
+    // Top Moods (Bar Chart)
+    double[] _topMoodsData = { 8, 6, 5, 3, 2 };
+    string[] _topMoodsLabels = { "Happy", "Calm", "Excited", "Stressed", "Grateful" };
+
+    // Most Used Tags
+    double[] _tagData = { 12, 9, 7, 5, 4 };
+    string[] _tagLabels = { "Work", "Health", "Family", "Fitness", "Travel" };
+
+    // Word Count Trends
+    double[] _wordCountData = { 150, 180, 165, 200, 175, 190, 220 };
+    string[] _wordCountLabels = { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
+
+    // Chart Options
+    ChartOptions _chartOptions = new()
+    {
+        YAxisTicks = 2,
+        MaxNumYAxisTicks = 5
+    };
+
+    ChartOptions _lineChartOptions = new()
+    {
+        YAxisTicks = 50,
+        MaxNumYAxisTicks = 6,
+        LineStrokeWidth = 3
+    };
+
+    // Recent Entries
+    List<JournalEntry> _recentEntries = new()
+    {
+        new JournalEntry
+        {
+            Date = DateTime.Today,
+            Title = "Good Day at Work",
+            PrimaryMood = "Happy",
+            MoodCategory = "Positive"
+        },
+        new JournalEntry
+        {
+            Date = DateTime.Today.AddDays(-1),
+            Title = "Workout Session",
+            PrimaryMood = "Excited",
+            MoodCategory = "Positive"
+        },
+        new JournalEntry
+        {
+            Date = DateTime.Today.AddDays(-2),
+            Title = "Family Time",
+            PrimaryMood = "Calm",
+            MoodCategory = "Neutral"
+        },
+        new JournalEntry
+        {
+            Date = DateTime.Today.AddDays(-3),
+            Title = "Busy Day",
+            PrimaryMood = "Stressed",
+            MoodCategory = "Negative"
+        }
+    };
+
+    Color GetMoodColor(string moodCategory)
+    {
+        return moodCategory switch
+        {
+            "Positive" => Color.Success,
+            "Neutral" => Color.Default,
+            "Negative" => Color.Error,
+            _ => Color.Default
+        };
+    }
+
+    void ViewEntry(JournalEntry entry)
+    {
+        NavigationManager.NavigateTo($"/journals/{entry.Title.Replace(" ", "-")}");
+    }
+
+    public class JournalEntry
+    {
+        public DateTime Date { get; set; }
+        public string Title { get; set; }
+        public string PrimaryMood { get; set; }
+        public string MoodCategory { get; set; }
+    }
+}
