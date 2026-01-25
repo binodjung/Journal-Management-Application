@@ -1,10 +1,7 @@
 ﻿@page "/calendar"
+@using MudBlazor
 
-<<<<<<< Updated upstream
-<MudText Typo="Typo.h4">Calendar</MudText>
-<MudText>Calendar view of journal entries.</MudText>
-=======
-<MudGrid Class="mb-4 mt-5 pa-4">
+<MudGrid>
     <MudItem xs="12">
         <MudText Typo="Typo.h4" Class="mb-4">Journal Calendar</MudText>
     </MudItem>
@@ -42,7 +39,6 @@
                         <MudButton Variant="@GetDayVariant(day.Value)"
                                    Color="@GetDayColor(day.Value)"
                                    Size="Size.Small"
-                                   Disabled="@IsFutureDate(day.Value)"
                                    FullWidth
                                    OnClick="() => SelectDate(day.Value)">
                             @day.Value.Day
@@ -133,11 +129,6 @@
     string[] _dayNames = new[] { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
     JournalEntry _selectedEntry;
 
-    bool IsFutureDate(DateTime day)
-    {
-        return day.Date > DateTime.Today;
-    }
-
     List<JournalEntry> JournalEntries = new()
     {
         new() { Date = DateTime.Today, Title = "Good Day", Content = "Worked hard.", PrimaryMood = "Happy", MoodCategory = "Positive", Tags = new() { "Work" } },
@@ -213,4 +204,3 @@
         public List<string> Tags { get; set; } = new();
     }
 }
->>>>>>> Stashed changes

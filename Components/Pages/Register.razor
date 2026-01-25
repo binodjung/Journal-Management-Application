@@ -1,10 +1,5 @@
 ﻿@page "/register"
-<<<<<<< Updated upstream
-=======
-@using JournalApplicaton.Model
-@using JournalApplicaton.Services
 @layout AuthLayout
->>>>>>> Stashed changes
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 @inject IUserService UserService
@@ -52,11 +47,7 @@
                           InputType="InputType.Email"
                           Required
                           RequiredError="Email is required"
-<<<<<<< Updated upstream
-                          @* Validation="@(new EmailAddressAttribute() { ErrorMessage = "Enter a valid email" })" *@
-=======
-                          Validation="ValidateEmail"
->>>>>>> Stashed changes
+                          Validation="@(ValidateEmail)"
                           Adornment="Adornment.Start"
                           AdornmentIcon="@Icons.Material.Filled.Email"
                           Class="mb-4" />
@@ -154,17 +145,40 @@
         _confirmPasswordIcon = _confirmPasswordVisible ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff;
     }
 
-<<<<<<< Updated upstream
-=======
     string? ValidateEmail(string email)
     {
+        if (string.IsNullOrWhiteSpace(email))
+            return "Email is required";
+
         try
         {
-            return new System.Net.Mail.MailAddress(email).Address == email
-                ? null
-                : "Invalid email";
+            var addr = new System.Net.Mail.MailAddress(email);
+            return addr.Address == email ? null : "Enter a valid email";
         }
-        catch { return "Invalid email"; }
+        catch
+        {
+            return "Enter a valid email";
+        }
+    }
+
+    string? ValidatePassword(string password)
+    {
+        if (string.IsNullOrWhiteSpace(password))
+            return "Password is required";
+            
+        if (password.Length < 8)
+            return "Password must be at least 8 characters";
+            
+        if (!password.Any(char.IsUpper))
+            return "Password must contain at least one uppercase letter";
+            
+        if (!password.Any(char.IsLower))
+            return "Password must contain at least one lowercase letter";
+            
+        if (!password.Any(char.IsDigit))
+            return "Password must contain at least one number";
+            
+        return null;
     }
 
 >>>>>>> Stashed changes
