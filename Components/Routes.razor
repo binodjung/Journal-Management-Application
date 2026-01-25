@@ -1,6 +1,67 @@
-﻿<Router AppAssembly="typeof(MauiProgram).Assembly">
+﻿@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+
+<Router AppAssembly="typeof(MauiProgram).Assembly">
     <Found Context="routeData">
         <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
         <FocusOnNavigate RouteData="routeData" Selector="h1" />
     </Found>
+
+    <NotFound>
+        <LayoutView Layout="typeof(Layout.MainLayout)">
+            <MudContainer MaxWidth="MaxWidth.Medium"
+                          Class="d-flex justify-center align-center"
+                          Style="min-height:70vh;">
+
+                <MudPaper Class="pa-10 text-center" Elevation="3">
+
+                    <MudIcon Icon="@Icons.Material.Filled.SearchOff"
+                             Size="Size.Large"
+                             Color="Color.Primary"
+                             Class="mb-4" />
+
+                    <MudText Typo="Typo.h3" Class="mb-2">
+                        Page Not Found
+                    </MudText>
+
+                    <MudText Typo="Typo.body1"
+                             Color="Color.Secondary"
+                             Class="mb-6">
+                        The page you’re looking for doesn’t exist.
+                    </MudText>
+
+                    <MudStack Direction="Row"
+                              Justify="Justify.Center"
+                              Spacing="2">
+
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.Home"
+                                   Href="/dashboard">
+                            Go Home
+                        </MudButton>
+
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Secondary"
+                                   StartIcon="@Icons.Material.Filled.ArrowBack"
+                                   OnClick="GoBack">
+                            Go Back
+                        </MudButton>
+
+                    </MudStack>
+
+                </MudPaper>
+
+            </MudContainer>
+        </LayoutView>
+    </NotFound>
 </Router>
+@code {
+
+    private async Task GoBack()
+    {
+        await JS.InvokeVoidAsync("history.back");
+    }
+
+}

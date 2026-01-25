@@ -1,14 +1,19 @@
 ﻿@inherits LayoutComponentBase
 @inject NavigationManager Navigation
+@inject IJSRuntime JS
 
 <MudThemeProvider IsDarkMode="@_isDarkMode" Theme="@_customTheme" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
-<MudLayout>
+<MudLayout FixedHeader="true">
     <!-- AppBar -->
     <MudAppBar Elevation="1" Color="Color.Primary">
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
+                       Color="Color.Inherit"
+                       Edge="Edge.Start"
+                       OnClick="GoBack" />
         <MudIconButton Icon="@Icons.Material.Filled.Menu"
                        Color="Color.Inherit"
                        Edge="Edge.Start"
@@ -69,7 +74,7 @@
     </MudDrawer>
 
     <!-- Main Content -->
-    <MudMainContent Class="pa-4 mt-4">
+    <MudMainContent Class="pa-4">
         @Body
     </MudMainContent>
 </MudLayout>
@@ -115,6 +120,20 @@
         Navigation.NavigateTo("/profile");
     }
 
+    private async void GoBack()
+    {
+        try
+        {
+            // Try to go back in browser history
+            await JS.InvokeVoidAsync("history.back");
+        }
+        catch
+        {
+            // Fallback: navigate to home if history is not available
+            Navigation.NavigateTo("/");
+        }
+    }
+
     void Logout()
     {
         // TODO: Implement actual logout logic
@@ -125,7 +144,7 @@
 
     private List<MenuItem> MenuItems = new()
     {
-        new MenuItem("Dashboard", "/", Icons.Material.Filled.Dashboard),
+        new MenuItem("Dashboard", "/dashboard", Icons.Material.Filled.Dashboard),
         new MenuItem("Journals", "/journals", Icons.Material.Filled.Book),
         new MenuItem("Calendar", "/calendar", Icons.Material.Filled.CalendarMonth),
     };
