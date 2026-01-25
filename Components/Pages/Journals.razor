@@ -1,7 +1,24 @@
 ﻿@page "/journals"
 @using MudBlazor
 
+<<<<<<< Updated upstream
 <MudText Typo="Typo.h4" Class="mb-4">Journals</MudText>
+=======
+<!-- Page Title & Create Button -->
+<MudGrid Class="mb-4 mt-5 pa-4" AlignItems="Center">
+    <MudItem xs="6">
+        <MudText Typo="Typo.h4">Journals</MudText>
+    </MudItem>
+    <MudItem xs="6" Class="d-flex justify-end">
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   Href="/journals/create">
+            Create Journal
+        </MudButton>
+    </MudItem>
+</MudGrid>
+>>>>>>> Stashed changes
 
 <!-- Top Bar: Title and Create Button -->
 <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">

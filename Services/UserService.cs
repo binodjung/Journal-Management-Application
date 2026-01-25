@@ -1,9 +1,8 @@
-﻿using JournalApplicaton.Common;
+﻿using JournalApplicaton.Model;
 using JournalApplicaton.Data;
-using JournalApplicaton.Entities;
-using JournalApplicaton.Model;
+using JournalApplicaton.Common;
 using Microsoft.EntityFrameworkCore;
-using System;
+using JournalApplicaton.Entities;
 
 namespace JournalApplicaton.Services;
 
@@ -16,12 +15,12 @@ public class UserService : IUserService
         _context = context;
     }
 
-    // Private helper method to map Entity to DisplayModel
+    // ✅ Private helper method to map Entity to DisplayModel
     private UserDisplayModel MapToDisplayModel(User user)
     {
         return new UserDisplayModel
         {
-            Id = user.Id,
+            UserId = user.UserId,
             Name = user.FullName,
             Email = user.Email,
         };
@@ -31,7 +30,7 @@ public class UserService : IUserService
     {
         try
         {
-            // Check duplicate email
+            // 🔹 Check duplicate email
             bool emailExists = await _context.Users
                 .AnyAsync(u => u.Email == viewModel.Email);
 
@@ -41,7 +40,7 @@ public class UserService : IUserService
                     .FailureResult("Email already registered");
             }
 
-            //  Check duplicate username
+            // 🔹 Check duplicate username
             bool usernameExists = await _context.Users
                 .AnyAsync(u => u.Username == viewModel.Username);
 
@@ -51,10 +50,10 @@ public class UserService : IUserService
                     .FailureResult("Username already taken");
             }
 
-            // Hash password using BCrypt
+            // 🔹 Hash password using BCrypt
             string hashedPassword = BCrypt.Net.BCrypt.HashPassword(viewModel.Password);
 
-            // Map ViewModel → Entity
+            // 🔹 Map ViewModel → Entity
             var user = new User
             {
                 FullName = viewModel.Name,
@@ -66,10 +65,10 @@ public class UserService : IUserService
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            //  Map Entity → Display Model
+            // 🔹 Map Entity → Display Model
             var displayModel = new UserDisplayModel
             {
-                Id = user.Id,
+                UserId = user.UserId,
                 Name = user.FullName,
                 Username = user.Username,
                 Email = user.Email
@@ -97,29 +96,13 @@ public class UserService : IUserService
 
         var display = new UserDisplayModel
         {
-            Id = user.Id,
+            UserId = user.UserId,
             Name = user.FullName,
             Username = user.Username,
             Email = user.Email
         };
 
         return ServiceResult<UserDisplayModel>.SuccessResult(display);
-    }
-    public async Task<ServiceResult<List<UserDisplayModel>>> GetAllUsersAsync()
-    {
-        try
-        {
-            var users = await _context.Users.ToListAsync();
-
-            //  Map entities to display models
-            var displayModels = users.Select(MapToDisplayModel).ToList();
-
-            return ServiceResult<List<UserDisplayModel>>.SuccessResult(displayModels);
-        }
-        catch (Exception ex)
-        {
-            return ServiceResult<List<UserDisplayModel>>.FailureResult($"Error retrieving users: {ex.Message}");
-        }
     }
 
     public async Task<ServiceResult<UserDisplayModel>> GetUserByIdAsync(int id)
@@ -132,7 +115,7 @@ public class UserService : IUserService
                 return ServiceResult<UserDisplayModel>.FailureResult($"User with ID {id} not found");
             }
 
-            // Map entity to display model
+            // ✅ Map entity to display model
             var displayModel = MapToDisplayModel(user);
 
             return ServiceResult<UserDisplayModel>.SuccessResult(displayModel);
@@ -155,14 +138,14 @@ public class UserService : IUserService
 
             // Check for duplicate email (excluding current user)
             var duplicateEmail = await _context.Users
-                .AnyAsync(u => u.Email == viewModel.Email && u.Id != id);
+                .AnyAsync(u => u.Email == viewModel.Email && u.UserId != id);
 
             if (duplicateEmail)
             {
                 return ServiceResult<UserDisplayModel>.FailureResult($"Email {viewModel.Email} is already in use");
             }
 
-            // Map ViewModel to Entity
+            // ✅ Map ViewModel to Entity
             existingUser.FullName = viewModel.Name;
             existingUser.Email = viewModel.Email;
 
