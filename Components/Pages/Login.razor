@@ -1,23 +1,31 @@
-@* @page "/" *@
+@page "/"
 @page "/login"
+@using JournalApplicaton.Model
+@using JournalApplicaton.Services
 @layout AuthLayout
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
+@inject IUserService UserService
+@inject UserSessionService Session
 
-<MudContainer MaxWidth="MaxWidth.Small" Class="d-flex align-center justify-center" Style="min-height: 100vh;">
-    <MudPaper Elevation="8" Class="pa-8" Style="width: 100%; max-width: 450px;">
+<MudContainer MaxWidth="MaxWidth.Small"
+              Class="d-flex align-center justify-center"
+              Style="min-height: 100vh;">
 
-        <!-- Logo/Header Section -->
+    <MudPaper Elevation="8" Class="pa-8" Style="width:100%; max-width:450px;">
+
+        <!-- Header -->
         <div class="d-flex flex-column align-center mb-6">
             <MudIcon Icon="@Icons.Material.Filled.Book"
                      Size="Size.Large"
                      Color="Color.Primary"
-                     Style="font-size: 4rem;" />
+                     Style="font-size:4rem;" />
+
             <MudText Typo="Typo.h4" Class="mt-2">Welcome Back</MudText>
             <MudText Typo="Typo.body2">Sign in to continue to your journal</MudText>
         </div>
 
-        <!-- Login Form -->
+        <!-- Form -->
         <MudForm @ref="_form" @bind-IsValid="_isValid">
 
             <!-- Username -->
@@ -42,27 +50,28 @@
                           OnAdornmentClick="TogglePasswordVisibility"
                           Class="mb-2" />
 
+            <!-- Options -->
             <div class="d-flex justify-space-between align-center mb-4">
-                <MudCheckBox T = "string" @bind-Checked="_rememberMe"
+                <MudCheckBox T="bool"
+                             @bind-Checked="_rememberMe"
                              Label="Remember me"
                              Color="Color.Primary"
                              Dense />
-                <MudLink Href="/forgot-password" Typo="Typo.body2">
-                    Forgot password?
-                </MudLink>
+
+                <MudLink Href="/forgot-password">Forgot password?</MudLink>
             </div>
 
-            <MudButton Variant="Variant.Filled"
-                       Color="Color.Primary"
-                       FullWidth
+            <!-- Submit -->
+            <MudButton FullWidth
                        Size="Size.Large"
+                       Color="Color.Primary"
+                       Disabled="_isLoading"
                        OnClick="HandleLogin"
-                       Disabled="@(!_isValid || _isLoading)"
                        Class="mb-4">
 
                 @if (_isLoading)
                 {
-                    <MudProgressCircular Size="Size.Small" Indeterminate />
+                    <MudProgressCircular Indeterminate Size="Size.Small" />
                 }
                 else
                 {
@@ -74,14 +83,13 @@
 
         <MudDivider Class="my-4" />
 
-        <div class="d-flex justify-center align-center">
+        <div class="d-flex justify-center">
             <MudText Typo="Typo.body2">Don't have an account?</MudText>
-            <MudLink Href="/register" Typo="Typo.body2" Class="ml-1">
-                Sign up
-            </MudLink>
+            <MudLink Href="/register" Class="ml-1">Sign up</MudLink>
         </div>
 
     </MudPaper>
+
 </MudContainer>
 
 @code {
@@ -97,17 +105,21 @@
     private InputType _passwordInputType = InputType.Password;
     private string _passwordIcon = Icons.Material.Filled.VisibilityOff;
 
-    void TogglePasswordVisibility()
+    private void TogglePasswordVisibility()
     {
         _passwordVisible = !_passwordVisible;
-        _passwordInputType = _passwordVisible ? InputType.Text : InputType.Password;
+        _passwordInputType = _passwordVisible
+            ? InputType.Text
+            : InputType.Password;
+
         _passwordIcon = _passwordVisible
             ? Icons.Material.Filled.Visibility
             : Icons.Material.Filled.VisibilityOff;
     }
 
-    async Task HandleLogin()
+    private async Task HandleLogin()
     {
+        await _form!.Validate();
         if (!_isValid || _isLoading)
             return;
 
@@ -120,7 +132,6 @@
 
         if (result.Success)
         {
-            // ✅ Set current logged-in user
             Session.SetCurrentUser(result.Data);
 
             Snackbar.Add("Login successful!", Severity.Success);
@@ -128,7 +139,7 @@
         }
         else
         {
-            Snackbar.Add(result.ErrorMessage, Severity.Error);
+            Snackbar.Add(result.ErrorMessage ?? "Login failed", Severity.Error);
         }
 
         _isLoading = false;
