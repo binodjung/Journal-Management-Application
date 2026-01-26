@@ -1,4 +1,6 @@
 ﻿@page "/register"
+@using JournalApplicaton.Model
+@using JournalApplicaton.Services
 @layout AuthLayout
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
@@ -165,35 +167,28 @@
     {
         if (string.IsNullOrWhiteSpace(password))
             return "Password is required";
-            
+
         if (password.Length < 8)
             return "Password must be at least 8 characters";
-            
+
         if (!password.Any(char.IsUpper))
             return "Password must contain at least one uppercase letter";
-            
+
         if (!password.Any(char.IsLower))
             return "Password must contain at least one lowercase letter";
-            
+
         if (!password.Any(char.IsDigit))
             return "Password must contain at least one number";
-            
-        return null;
-    }
 
->>>>>>> Stashed changes
-    string? ValidatePassword(string password)
-    {
-        if (password.Length < 8) return "Minimum 8 characters";
-        if (!password.Any(char.IsUpper)) return "Add uppercase letter";
-        if (!password.Any(char.IsLower)) return "Add lowercase letter";
-        if (!password.Any(char.IsDigit)) return "Add a number";
-        if (!password.Any(ch => "!@$%*?&".Contains(ch))) return "Add special character";
+        if (!password.Any(ch => "!@$%*?&".Contains(ch)))
+            return "Password must contain at least one special character";
+
         return null;
     }
 
     string? ValidateConfirmPassword(string value)
         => value != _password ? "Passwords do not match" : null;
+
 
     async Task HandleRegister()
     {
