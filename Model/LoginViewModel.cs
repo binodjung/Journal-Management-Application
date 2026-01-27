@@ -1,4 +1,4 @@
-﻿namespace JournalApplicaton.Model;
+﻿namespace JournalApplication.Model;
 
 using System.ComponentModel.DataAnnotations;
 

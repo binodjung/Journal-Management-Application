@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace JournalApplicaton.Model;
+namespace JournalApplication.Model;
 
 public class UserViewModel
 {

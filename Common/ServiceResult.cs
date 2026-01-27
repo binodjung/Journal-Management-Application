@@ -1,4 +1,4 @@
-﻿namespace JournalApplicaton.Common;
+﻿namespace JournalApplication.Common;
 
 public class ServiceResult<T>
 {

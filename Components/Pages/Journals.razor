@@ -1,222 +1,277 @@
 ﻿@page "/journals"
 @using MudBlazor
+@using JournalApplication.Services
+@using JournalApplication.Model
+@inject IJournalService JournalService
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+@inject IJSRuntime JSRuntime
 
-<!-- Page Title & Create Button -->
-<MudGrid Class="mt-5 pa-4" AlignItems="Center">
-    <MudItem xs="6">
-        <MudText Typo="Typo.h4">Journals</MudText>
-    </MudItem>
-    <MudItem xs="6" Class="d-flex justify-end">
-        <MudButton Variant="Variant.Filled"
-                   Color="Color.Primary"
+<MudContainer Class="mt-6">
+
+    <!-- HEADER -->
+    <MudStack Row Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+        <MudText Typo="Typo.h4">📓 Journals</MudText>
+
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
                    StartIcon="@Icons.Material.Filled.Add"
                    Href="/journals/create">
             Create Journal
         </MudButton>
-    </MudItem>
-</MudGrid>
+    </MudStack>
 
-<!-- Filters inside a Card -->
-<MudPaper Class="pa-3 mb-4" Elevation="1">
-    <MudGrid GutterSize="2" AlignItems="Center">
-        <MudItem xs="12" sm="4">
-            <MudTextField @bind-Value="_search"
-                          Placeholder="Search title or content..."
-                          Adornment="Adornment.Start"
-                          AdornmentIcon="@Icons.Material.Filled.Search"
-                          Immediate="true"
-                          FullWidth="true" />
-        </MudItem>
-        <MudItem xs="12" sm="3">
-            <MudDateRangePicker @bind-DateRange="_dateRange"
-                                Label="Date Range"
-                                Class="mud-width-full" />
-        </MudItem>
-        <MudItem xs="12" sm="2">
-            <MudSelect T="string"
-                       Label="Mood"
-                       @bind-Value="_selectedMood"
-                       Clearable="true"
-                       FullWidth="true">
-                @foreach (var mood in Moods)
-                {
-                    <MudSelectItem Value="@mood">@mood</MudSelectItem>
-                }
-            </MudSelect>
-        </MudItem>
-        <MudItem xs="12" sm="2">
-            <MudSelect T="string"
-                       Label="Tag"
-                       @bind-Value="_selectedTag"
-                       Clearable="true"
-                       FullWidth="true">
-                @foreach (var tag in Tags)
-                {
-                    <MudSelectItem Value="@tag">@tag</MudSelectItem>
-                }
-            </MudSelect>
-        </MudItem>
-    </MudGrid>
-</MudPaper>
+    <!-- FILTERS -->
+    <MudPaper Class="pa-4 mb-4">
+        <MudGrid GutterSize="3" AlignItems="End">
 
+            <!-- SEARCH -->
+            <MudItem xs="12" md="4">
+                <MudTextField T="string"
+                              Label="Search"
+                              Placeholder="Search by title"
+                              Value="_search"
+                              ValueChanged="OnSearchChanged"
+                              Immediate="true"
+                              Clearable
+                              FullWidth />
+            </MudItem>
 
-<!-- Journals Table -->
-<MudTable Items="FilteredJournals"
-          Dense="true"
-          Hover="true"
-          Bordered="true"
-          Striped="true"
-          RowsPerPage="5"
-          Elevation="1">
+            <!-- MOOD -->
+            <MudItem xs="12" md="2">
+                <MudSelect T="string"
+                           Label="Search"
+                           Value="_search"
+                           ValueChanged="OnSearchChanged"
+						   Immediate="true"
+                           Clearable
+                           FullWidth>
+                </MudSelect>
+            </MudItem>
 
-    <HeaderContent>
-        <MudTh>Date</MudTh>
-        <MudTh>Title</MudTh>
-        <MudTh>Primary Mood</MudTh>
-        <MudTh>Tags</MudTh>
-        <MudTh>Actions</MudTh>
-    </HeaderContent>
+            <!-- TAG -->
+            <MudItem xs="12" md="2">
+                <MudTextField T="string"
+                              Label="Tag"
+                              Placeholder="e.g. work"
+                              Value="_selectedTag"
+                              ValueChanged="OnTagChanged"
+                              Immediate="true"
+                              Clearable
+                              FullWidth />
+            </MudItem>
 
-    <RowTemplate>
-        <MudTd>@context.Date.ToShortDateString()</MudTd>
-        <MudTd>@context.Title</MudTd>
-        <MudTd>@context.PrimaryMood</MudTd>
-        <MudTd>@string.Join(", ", context.Tags)</MudTd>
-        <MudTd Class="d-flex gap-1">
-            <MudIconButton Icon="@Icons.Material.Filled.Visibility"
-                           Color="Color.Primary"
-                           Size="Size.Small"
-                           OnClick="@(() => ViewJournal(context))"
-                           ToolTip="View" />
-            <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                           Color="Color.Info"
-                           Size="Size.Small"
-                           OnClick="@(() => EditJournal(context))"
-                           ToolTip="Edit" />
-            <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                           Color="Color.Error"
-                           Size="Size.Small"
-                           OnClick="@(() => ConfirmDeleteJournal(context))"
-                           ToolTip="Delete" />
-        </MudTd>
-    </RowTemplate>
+            <!-- DATE RANGE -->
+            <MudItem xs="12" md="3">
+                <MudDateRangePicker Label="Date Range"
+                                    DateRange="_dateRange"
+                                    DateRangeChanged="OnDateRangeChanged"
+                                    Class="mud-width-full" />
+            </MudItem>
 
-    <PagerContent>
-        <MudTablePager />
-    </PagerContent>
-</MudTable>
+            <!-- APPLY -->
+            <MudItem xs="12" md="1">
+                <MudButton Color="Color.Primary"
+                           Variant="Variant.Filled"
+                           FullWidth
+                           OnClick="ApplyFilters">
+                    Apply
+                </MudButton>
+            </MudItem>
 
-<!-- Delete Confirmation Dialog -->
+        </MudGrid>
+    </MudPaper>
+
+    <!-- TABLE -->
+    <MudTable Items="_journals"
+              Dense
+              Hover
+              Bordered
+              Striped
+              Elevation="1">
+
+        <HeaderContent>
+            <MudTh>Date</MudTh>
+            <MudTh>Title</MudTh>
+            <MudTh>Mood</MudTh>
+            <MudTh>Tags</MudTh>
+            <MudTh>Actions</MudTh>
+        </HeaderContent>
+
+        <RowTemplate>
+            <MudTd>@context.EntryDate.ToString("dd MMM yyyy")</MudTd>
+            <MudTd>@context.Title</MudTd>
+            <MudTd>
+                <MudChip T="string" Color="Color.Info" Size="Size.Small">
+                    @context.PrimaryMood
+                </MudChip>
+            </MudTd>
+            <MudTd>@string.Join(", ", context.Tags)</MudTd>
+            <MudTd Class="d-flex gap-1">
+                <MudIconButton Icon="@Icons.Material.Filled.Visibility"
+                               Color="Color.Primary"
+                               OnClick="@(() => ViewJournal(context.EntryDate))" />
+                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                               Color="Color.Info"
+                               OnClick="@(() => EditJournal(context.EntryDate))" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                               Color="Color.Error"
+                               OnClick="@(() => ConfirmDelete(context))" />
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+
+    <!-- PAGINATION -->
+    <MudStack Row Justify="Justify.SpaceBetween" Class="mt-4">
+        <MudText Typo="Typo.body2">Page @_currentPage</MudText>
+
+        <MudStack Row Spacing="2">
+            <MudButton Disabled="@(_currentPage == 1)"
+                       OnClick="PrevPage">
+                Previous
+            </MudButton>
+
+            <MudButton Disabled="@(_journals.Count < _pageSize)"
+                       OnClick="NextPage">
+                Next
+            </MudButton>
+        </MudStack>
+    </MudStack>
+
+    <!-- PDF EXPORT -->
+    <MudPaper Class="pa-4 mt-4">
+        <MudText Typo="Typo.h6">Export Journals PDF</MudText>
+
+        <MudGrid Class="mt-2">
+            <MudItem xs="12" md="4">
+                <MudDatePicker Label="From Date"
+                               @bind-Date="_pdfFromDate"
+                               MaxDate="DateTime.Today" />
+            </MudItem>
+
+            <MudItem xs="12" md="4">
+                <MudDatePicker Label="To Date"
+                               @bind-Date="_pdfToDate"
+                               MaxDate="DateTime.Today" />
+            </MudItem>
+
+            <MudItem xs="12" md="4" Class="d-flex align-center">
+                <MudButton Color="Color.Primary"
+                           Variant="Variant.Filled"
+                           Disabled="@(!_pdfFromDate.HasValue || !_pdfToDate.HasValue)"
+                           OnClick="GeneratePdf"
+                           StartIcon="@Icons.Material.Filled.PictureAsPdf">
+                    Generate PDF
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+</MudContainer>
+
+<!-- DELETE DIALOG -->
 <MudDialog @bind-IsVisible="_deleteDialogVisible">
     <DialogContent>
-        <MudText Typo="Typo.h6">Are you sure you want to delete this journal entry?</MudText>
+        <MudText Typo="Typo.h6">
+            Are you sure you want to delete this journal?
+        </MudText>
     </DialogContent>
-    <DialogActions >
-        <MudButton Color="Color.Primary" Variant="Variant.Text" OnClick="() => _deleteDialogVisible = false">Cancel</MudButton>
-        <MudButton Color="Color.Error" Variant="Variant.Filled" OnClick="DeleteJournalConfirmed">Delete</MudButton>
+    <DialogActions>
+        <MudButton Variant="Variant.Text"
+                   OnClick="() => _deleteDialogVisible = false">
+            Cancel
+        </MudButton>
+        <MudButton Color="Color.Error"
+                   Variant="Variant.Filled"
+                   OnClick="DeleteConfirmed">
+            Delete
+        </MudButton>
     </DialogActions>
 </MudDialog>
 
-
 @code {
+
     string _search;
     string _selectedMood;
     string _selectedTag;
     DateRange _dateRange;
 
-    List<string> Moods = new()
-    {
-        "Happy","Excited","Calm","Sad","Angry","Stressed"
-    };
-
-    List<string> Tags = new()
-    {
-        "Work","Health","Travel","Family","Fitness","Study"
-    };
-
-    List<JournalEntry> NewJournals = new()
-    {
-        new JournalEntry
-        {
-            Date = DateTime.Today,
-            Title = "Good Day",
-            Content = "Had a productive day at work",
-            PrimaryMood = "Happy",
-            Tags = new() { "Work" }
-        },
-        new JournalEntry
-        {
-            Date = DateTime.Today.AddDays(-1),
-            Title = "Workout",
-            Content = "Went to gym",
-            PrimaryMood = "Excited",
-            Tags = new() { "Fitness","Health" }
-        },
-        new JournalEntry
-        {
-            Date = DateTime.Today.AddDays(-2),
-            Title = "Family Time",
-            Content = "Visited parents",
-            PrimaryMood = "Calm",
-            Tags = new() { "Family" }
-        }
-    };
-
-    JournalEntry _journalToDelete;
+    List<JournalDisplayModel> _journals = new();
+    JournalDisplayModel _toDelete;
     bool _deleteDialogVisible;
 
-    IEnumerable<JournalEntry> FilteredJournals =>
-        NewJournals.Where(j =>
-            (string.IsNullOrWhiteSpace(_search) ||
-                j.Title.Contains(_search, StringComparison.OrdinalIgnoreCase) ||
-                j.Content.Contains(_search, StringComparison.OrdinalIgnoreCase)) &&
+    int _currentPage = 1;
+    int _pageSize = 5;
+    int _userId = 1;
 
-            (string.IsNullOrEmpty(_selectedMood) ||
-                j.PrimaryMood == _selectedMood) &&
+    DateTime? _pdfFromDate;
+    DateTime? _pdfToDate;
 
-            (string.IsNullOrEmpty(_selectedTag) ||
-                j.Tags.Contains(_selectedTag)) &&
+    protected override async Task OnInitializedAsync()
+        => await LoadJournals();
 
-            (_dateRange == null ||
-                (j.Date >= _dateRange.Start && j.Date <= _dateRange.End))
-        );
-
-    void ViewJournal(JournalEntry journal)
+    async Task LoadJournals()
     {
-        // Redirect to journal detail page
-        NavigationManager.NavigateTo($"/journals/{journal.Title.Replace(" ", "-")}");
+        var (list, _) = await JournalService.SearchJournalsAsync(
+            _userId,
+            _search,
+            _selectedMood,
+            _selectedTag,
+            _dateRange?.Start,
+            _dateRange?.End,
+            _currentPage,
+            _pageSize);
+
+        _journals = list;
     }
 
-    void EditJournal(JournalEntry journal)
+    void OnSearchChanged(string value) { _search = value; ResetOthers("search"); }
+    void OnMoodChanged(string value) { _selectedMood = value; ResetOthers("mood"); }
+    void OnTagChanged(string value) { _selectedTag = value; ResetOthers("tag"); }
+    void OnDateRangeChanged(DateRange range) { _dateRange = range; ResetOthers("date"); }
+
+    void ResetOthers(string source)
     {
-        // Redirect to CreateJournal page with query parameter for edit
-        NavigationManager.NavigateTo($"/journals/create?title={journal.Title}");
+        if (source != "search") _search = null;
+        if (source != "mood") _selectedMood = null;
+        if (source != "tag") _selectedTag = null;
+        if (source != "date") _dateRange = null;
+        _currentPage = 1;
     }
 
-    void ConfirmDeleteJournal(JournalEntry journal)
-    {
-        _journalToDelete = journal;
-        _deleteDialogVisible = true;
-    }
+    async Task ApplyFilters() => await LoadJournals();
+    async Task NextPage() { _currentPage++; await LoadJournals(); }
+    async Task PrevPage() { if (_currentPage > 1) _currentPage--; await LoadJournals(); }
 
-    void DeleteJournalConfirmed()
+    void ViewJournal(DateTime d) => NavigationManager.NavigateTo($"/journals/view/{d:yyyy-MM-dd}");
+    void EditJournal(DateTime d) => NavigationManager.NavigateTo($"/journals/create?date={d:yyyy-MM-dd}");
+
+    void ConfirmDelete(JournalDisplayModel j) { _toDelete = j; _deleteDialogVisible = true; }
+
+    async Task DeleteConfirmed()
     {
-        if (_journalToDelete != null)
-        {
-            NewJournals.Remove(_journalToDelete);
-            _journalToDelete = null;
-        }
+        await JournalService.DeleteJournalAsync(_userId, _toDelete.EntryDate);
+        Snackbar.Add("Journal deleted", Severity.Success);
         _deleteDialogVisible = false;
+        await LoadJournals();
     }
 
-    [Inject] NavigationManager NavigationManager { get; set; }
-
-    public class JournalEntry
+    async Task GeneratePdf()
     {
-        public DateTime Date { get; set; }
-        public string Title { get; set; }
-        public string Content { get; set; }
-        public string PrimaryMood { get; set; }
-        public List<string> Tags { get; set; }
+        var bytes = await JournalService.GenerateJournalPdfAsync(
+            _userId, _pdfFromDate!.Value, _pdfToDate!.Value);
+
+        await JSRuntime.InvokeVoidAsync(
+            "downloadFileFromBase64",
+            $"journals_{_pdfFromDate:yyyyMMdd}_{_pdfToDate:yyyyMMdd}.pdf",
+            Convert.ToBase64String(bytes));
     }
 }
+<script>
+    window.downloadFileFromBase64 = (fileName, base64) => {
+        const link = document.createElement("a");
+        link.href = "data:application/pdf;base64," + base64;
+        link.download = fileName;
+        link.click();
+    };
+</script>

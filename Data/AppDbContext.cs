@@ -1,11 +1,12 @@
-﻿using JournalApplicaton.Entities;
+﻿using JournalApplication.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace JournalApplicaton.Data;
+namespace JournalApplication.Data;
 
 public class AppDbContext : DbContext
 {
     public DbSet<User> Users { get; set; } = null!;
+    public DbSet<Journal> Journals { get; set; } = null!;
 
     private readonly string _dbPath;
 

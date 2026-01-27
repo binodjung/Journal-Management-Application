@@ -69,6 +69,7 @@
         <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="$(MauiVersion)" />
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
         <PackageReference Include="MudBlazor" Version="8.15.0" />
+        <PackageReference Include="QuestPDF" Version="2025.12.3" />
     </ItemGroup>
 
 </Project>

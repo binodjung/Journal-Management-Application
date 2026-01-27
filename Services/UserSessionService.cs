@@ -1,6 +1,6 @@
-﻿using JournalApplicaton.Model;
+﻿using JournalApplication.Model;
 
-namespace JournalApplicaton.Services;
+namespace JournalApplication.Services;
 
 public class UserSessionService
 {

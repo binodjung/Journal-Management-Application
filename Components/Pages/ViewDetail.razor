@@ -1,0 +1,147 @@
+﻿@page "/journals/view/{EntryDate}"
+@using MudBlazor
+@using JournalApplication.Model
+@using JournalApplication.Services
+
+@inject IJournalService JournalService
+@inject UserSessionService UserSession
+@inject NavigationManager NavigationManager
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-6">
+
+    <!-- Header -->
+    <MudStack Direction="Row"
+              Justify="Justify.SpaceBetween"
+              AlignItems="AlignItems.Center"
+              Class="mb-4">
+        <MudText Typo="Typo.h4">Journal Details</MudText>
+
+        <MudButton Variant="Variant.Outlined"
+                   StartIcon="@Icons.Material.Filled.ArrowBack"
+                   OnClick="@(() => NavigationManager.NavigateTo("/journals"))">
+            Back
+        </MudButton>
+    </MudStack>
+
+    @if (_journal == null)
+    {
+        <MudPaper Class="pa-6" Elevation="1">
+            <MudText Typo="Typo.h6" Align="Align.Center">
+                Journal not found
+            </MudText>
+        </MudPaper>
+    }
+    else
+    {
+        <MudGrid Spacing="3">
+
+            <!-- LEFT: CONTENT -->
+            <MudItem xs="12" md="8">
+                <MudPaper Class="pa-5" Elevation="2">
+
+                    <MudText Typo="Typo.h5">@_journal.Title</MudText>
+                    <MudText Typo="Typo.subtitle2" Color="Color.Secondary">
+                        @_journal.EntryDate.ToString("dddd, MMMM dd, yyyy")
+                    </MudText>
+
+                    <MudDivider Class="my-4" />
+
+                    <MudText Typo="Typo.h6" Class="mb-2">Journal Content</MudText>
+
+                    <MudPaper Class="pa-4"
+                              Elevation="0"
+                              Style="white-space: pre-wrap; line-height: 1.7;">
+                        @((MarkupString)_journal.Content)
+                    </MudPaper>
+
+                </MudPaper>
+            </MudItem>
+
+            <!-- RIGHT: META INFO -->
+            <MudItem xs="12" md="4">
+                <MudPaper Class="pa-4" Elevation="2">
+
+                    <MudText Typo="Typo.subtitle1" Class="mb-3">
+                        Overview
+                    </MudText>
+
+                    <MudStack Spacing="3">
+
+                        <div>
+                            <MudText Typo="Typo.caption">Primary Mood</MudText>
+                            <MudChip T="string" Color="Color.Primary">
+                                @_journal.PrimaryMood
+                            </MudChip>
+                        </div>
+
+                        <div>
+                            <MudText Typo="Typo.caption">Word Count</MudText>
+                            <MudChip T="string" Color="Color.Info">
+                                @_journal.WordCount
+                            </MudChip>
+                        </div>
+
+                        @if (_journal.SecondaryMoods?.Any() == true)
+                        {
+                            <div>
+                                <MudText Typo="Typo.caption">Secondary Moods</MudText>
+                                <MudStack Direction="Row" Spacing="1">
+                                    @foreach (var mood in _journal.SecondaryMoods)
+                                    {
+                                        <MudChip T="string" Color="Color.Tertiary"
+                                                 Variant="Variant.Outlined"
+                                                 Size="Size.Small">
+                                            @mood
+                                        </MudChip>
+                                    }
+                                </MudStack>
+                            </div>
+                        }
+
+                        @if (_journal.Tags?.Any() == true)
+                        {
+                            <div>
+                                <MudText Typo="Typo.caption">Tags</MudText>
+                                <MudStack Direction="Row" Spacing="1">
+                                    @foreach (var tag in _journal.Tags)
+                                    {
+                                        <MudChip T="string" Color="Color.Tertiary"
+                                                 Variant="Variant.Outlined"
+                                                 Size="Size.Small">
+                                            @tag
+                                        </MudChip>
+                                    }
+                                </MudStack>
+                            </div>
+                        }
+
+                    </MudStack>
+
+                </MudPaper>
+            </MudItem>
+
+        </MudGrid>
+    }
+
+</MudContainer>
+
+@code {
+    [Parameter] public string EntryDate { get; set; } = "";
+
+    JournalDisplayModel? _journal;
+
+    int WordCount =>
+        string.IsNullOrWhiteSpace(_journal?.Content)
+            ? 0
+            : _journal.Content
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                .Length;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!DateTime.TryParse(EntryDate, out var date))
+            return;
+
+        _journal = await JournalService.GetJournalByDateAsync(UserSession.CurrentUser!.UserId, date);
+    }
+}

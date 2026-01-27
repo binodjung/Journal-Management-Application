@@ -1,4 +1,4 @@
-﻿namespace JournalApplicaton.Model;
+﻿namespace JournalApplication.Model;
 
 
 public class UserDisplayModel

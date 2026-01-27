@@ -1,4 +1,4 @@
-﻿namespace JournalApplicaton.Entities;
+﻿namespace JournalApplication.Entities;
 
 public class User
 {

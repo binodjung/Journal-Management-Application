@@ -1,302 +1,273 @@
 ﻿@page "/journals/create"
+@layout MainLayout
+
 @using MudBlazor
+@using JournalApplication.Model
+@using JournalApplication.Services
 @inject IJSRuntime JS
-@inject NavigationManager NavigationManager
+@inject IJournalService JournalService
+@inject UserSessionService UserSession
 @inject ISnackbar Snackbar
+@inject NavigationManager Navigation
 
-<MudGrid Class="mb-4 mt-5 pa-4">
-    <MudItem xs="12">
-        <MudText Typo="Typo.h4" Class="mb-2">
-            @(_isEditMode ? "Edit Journal Entry" : "Create Journal Entry")
+<MudPaper Class="pa-4 mt-6" Elevation="2">
+    <MudForm @ref="_form">
+
+        <MudText Typo="Typo.h5" Class="mb-4">
+            Create Journal
         </MudText>
-        <MudText Typo="Typo.body2">
-            @DateTime.Today.ToString("dddd, MMMM dd, yyyy")
+
+        <!-- TITLE -->
+        <MudTextField @bind-Value="_model.Title"
+                      Label="Title"
+                      Required="true"
+                      RequiredError="Title is required"
+                      MaxLength="100" />
+
+        <!-- CONTENT -->
+        <MudText Typo="Typo.subtitle2" Class="mt-4 mb-1">
+            Content
         </MudText>
-    </MudItem>
-</MudGrid>
 
-<MudGrid>
-    <!-- ================= MAIN FORM ================= -->
-    <MudItem xs="12" md="8">
-        <MudPaper Class="pa-4" Elevation="2">
+        <div id="@EditorId"
+             style="height:220px; background:white; border:1px solid #ccc; border-radius:6px">
+        </div>
 
-            <MudForm @ref="_form" @bind-IsValid="_formValid">
+        <!-- PRIMARY MOOD -->
+        <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2">
+            Primary Mood (Required)
+        </MudText>
 
-                <!-- Title -->
-                <MudTextField @bind-Value="_title"
-                              Label="Title"
-                              Variant="Variant.Outlined"
-                              Required
-                              RequiredError="Title is required"
-                              Class="mb-4" />
+        <MudSelect T="string"
+                   Label="Select Category First"
+                   @bind-Value="_selectedCategory"
+                   Required="true"
+                   Class="mb-3">
+            <MudSelectItem T="string" Value="@("Positive")">Positive</MudSelectItem>
+            <MudSelectItem T="string" Value="@("Neutral")">Neutral</MudSelectItem>
+            <MudSelectItem T="string" Value="@("Negative")">Negative</MudSelectItem>
+        </MudSelect>
 
-                <!-- Content -->
-                <MudText Typo="Typo.subtitle2" Class="mb-1">Content</MudText>
-
-                <div id="@EditorId"
-                     style="height:200px; background:white; border:1px solid #ccc; border-radius:4px">
-                </div>
-
-                <!-- Primary Mood Category -->
-                <MudSelect T="string"
-                           @bind-Value="_primaryMoodCategory"
-                           Label="Primary Mood"
-                           Variant="Variant.Outlined"
-                           Required
-                           RequiredError="Please select a mood category"
-                           Class="mb-4 mt-4">
-                    <MudSelectItem Value="@("Positive")">Positive</MudSelectItem>
-                    <MudSelectItem Value="@("Neutral")">Neutral</MudSelectItem>
-                    <MudSelectItem Value="@("Negative")">Negative</MudSelectItem>
-
-                </MudSelect>
-
-                <!-- Secondary Moods -->
-                @if (!string.IsNullOrEmpty(_primaryMoodCategory))
+        @if (!string.IsNullOrEmpty(_selectedCategory))
+        {
+            <MudSelect T="string"
+                       Label="Primary Mood"
+                       Required="true"
+                       RequiredError="Primary mood is required"
+                       @bind-Value="_model.PrimaryMood">
+                @foreach (var mood in GetMoodsForCategory(_selectedCategory))
                 {
-                    <MudSelect T="string"
-                               Label="Secondary Moods (Max 2)"
-                               Variant="Variant.Outlined"
-                               MultiSelection="true"
-                               @bind-SelectedValues="_secondaryMoods"
-                               SelectionChangedAsync="OnSecondaryMoodChanged"
-                               Class="mb-4">
-                        @foreach (var mood in GetMoodsByCategory(_primaryMoodCategory))
-                        {
-                            <MudSelectItem Value="@mood">@mood</MudSelectItem>
-                        }
-                    </MudSelect>
+                    <MudSelectItem T="string" Value="@mood">@mood</MudSelectItem>
                 }
+            </MudSelect>
+        }
 
-                <!-- Tags -->
-                <MudAutocomplete T="string"
-                                 @bind-Value="_currentTag"
-                                 Label="Add Tags"
-                                 Variant="Variant.Outlined"
-                                 SearchFunc="SearchTags"
-                                 ResetValueOnEmptyText="true"
-                                 CoerceText="true"
-                                 CoerceValue="false"
-                                 AdornmentIcon="@Icons.Material.Filled.Add"
-                                 OnAdornmentClick="AddTag"
-                                 Class="mb-3" />
+        <!-- SECONDARY MOODS -->
+        <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2">
+            Secondary Moods (Optional - Max 2)
+        </MudText>
 
-                <!-- Action Buttons -->
-                <MudDivider Class="my-4" />
+        <MudSelect T="string"
+                   Label="Secondary Moods"
+                   MultiSelection="true"
+                   SelectedValues="_secondaryMoods"
+                   SelectedValuesChanged="OnSecondaryMoodsChanged">
+            <MudSelectItem T="string" Disabled="true">
+                <MudText Typo="Typo.caption" Color="Color.Primary">Positive</MudText>
+            </MudSelectItem>
+            @foreach (var mood in PositiveMoods)
+            {
+                <MudSelectItem T="string" Value="@mood">@mood</MudSelectItem>
+            }
+            <MudSelectItem T="string" Disabled="true">
+                <MudText Typo="Typo.caption" Color="Color.Info">Neutral</MudText>
+            </MudSelectItem>
+            @foreach (var mood in NeutralMoods)
+            {
+                <MudSelectItem T="string" Value="@mood">@mood</MudSelectItem>
+            }
+            <MudSelectItem T="string" Disabled="true">
+                <MudText Typo="Typo.caption" Color="Color.Warning">Negative</MudText>
+            </MudSelectItem>
+            @foreach (var mood in NegativeMoods)
+            {
+                <MudSelectItem T="string" Value="@mood">@mood</MudSelectItem>
+            }
+        </MudSelect>
 
-                <div class="d-flex justify-end gap-2">
-                    <MudButton Variant="Variant.Outlined"
-                               OnClick="Cancel">
-                        Cancel
-                    </MudButton>
-
-                    <MudButton Variant="Variant.Filled"
-                               Color="Color.Primary"
-                               OnClick="SaveEntry"
-                               Disabled="@(!_formValid || _isSaving)">
-
-                        @if (_isSaving)
-                        {
-                            <MudProgressCircular Size="Size.Small"
-                                                 Indeterminate
-                                                 Class="mr-2" />
-                        }
-
-                        @(_isEditMode ? "Update Entry" : "Save Entry")
-                    </MudButton>
-                </div>
-
-            </MudForm>
-        </MudPaper>
-    </MudItem>
-
-    <!-- ================= SIDEBAR ================= -->
-    <MudItem xs="12" md="4">
-
-        <!-- Writing Tips -->
-        <MudPaper Class="pa-4 mb-3" Elevation="2">
-            <MudText Typo="Typo.h6" Class="mb-3">
-                <MudIcon Icon="@Icons.Material.Filled.Lightbulb" Size="Size.Small" Class="mr-2" />
-                Writing Tips
+        @if (_secondaryMoods.Count > 0)
+        {
+            <MudText Typo="Typo.caption" Class="mt-1">
+                Selected: @string.Join(", ", _secondaryMoods)
             </MudText>
+        }
 
-            <MudList T="string" Dense>
-                <MudListItem>Be honest with your feelings</MudListItem>
-                <MudListItem>Include specific details</MudListItem>
-                <MudListItem>Reflect on what you learned</MudListItem>
-                <MudListItem>Set goals for tomorrow</MudListItem>
-            </MudList>
-        </MudPaper>
+        <!-- TAGS -->
+        <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2">
+            Tags (Optional)
+        </MudText>
 
-        <!-- Stats -->
-        <MudPaper Class="pa-4 mb-3" Elevation="2">
-            <MudText Typo="Typo.h6" Class="mb-2">Entry Statistics</MudText>
+        <MudSelect T="string"
+                   Label="Select Tags"
+                   MultiSelection="true"
+                   SelectedValues="_selectedTags"
+                   SelectedValuesChanged="OnTagsChanged">
+            @foreach (var tag in PredefinedTags)
+            {
+                <MudSelectItem T="string" Value="@tag">@tag</MudSelectItem>
+            }
+        </MudSelect>
 
-            <MudGrid>
-                <MudItem xs="6">
-                    <MudText Typo="Typo.body2">Words</MudText>
-                    <MudText Typo="Typo.h6">@GetWordCount()</MudText>
-                </MudItem>
+        @if (_selectedTags.Count > 0)
+        {
+            <MudText Typo="Typo.caption" Class="mt-1">
+                Selected Tags: @string.Join(", ", _selectedTags)
+            </MudText>
+        }
 
-                <MudItem xs="6">
-                    <MudText Typo="Typo.body2">Characters</MudText>
-                    <MudText Typo="Typo.h6">@(_content?.Length ?? 0)</MudText>
-                </MudItem>
-            </MudGrid>
-        </MudPaper>
+        <MudText Typo="Typo.caption" Color="Color.Error" Class="mt-2">
+            @_formMessage
+        </MudText>
 
-        <!-- Popular Tags -->
-        <MudPaper Class="pa-4" Elevation="2">
-            <MudText Typo="Typo.h6" Class="mb-3">Popular Tags</MudText>
+        <!-- ACTIONS -->
+        <div class="mt-4">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Save">
+                Save Journal
+            </MudButton>
 
-            <div class="d-flex flex-wrap gap-1">
-                @foreach (var tag in _preBuiltTags.Take(12))
-                {
-                    <MudChip T="string" Size="Size.Small"
-                             Variant="Variant.Outlined"
-                             OnClick="@(() => QuickAddTag(tag))">
-                        @tag
-                    </MudChip>
-                }
-            </div>
-        </MudPaper>
+            <MudButton Class="ml-2" Variant="Variant.Outlined" OnClick="Cancel">
+                Cancel
+            </MudButton>
+        </div>
 
-    </MudItem>
-</MudGrid>
+    </MudForm>
+</MudPaper>
 
 @code {
 
-    [Parameter]
-    [SupplyParameterFromQuery(Name = "title")]
-    public string ExistingTitle { get; set; }
+    private MudForm? _form;
+    private string _formMessage = "";
 
-    string EditorId = $"quill-editor-{Guid.NewGuid()}";
-
-    MudForm _form;
-    bool _formValid;
-    bool _isEditMode;
-    bool _isSaving;
-
-    string _title = "";
-    string _content = "";
-    string _primaryMoodCategory = "";
-    IEnumerable<string> _secondaryMoods = new HashSet<string>();
-    string _currentTag = "";
-    List<string> _selectedTags = new();
-
-    // Mood lists
-    List<string> _positiveMoods = new() { "Happy", "Excited", "Relaxed", "Grateful", "Confident" };
-    List<string> _neutralMoods = new() { "Calm", "Thoughtful", "Curious", "Nostalgic", "Bored" };
-    List<string> _negativeMoods = new() { "Sad", "Angry", "Stressed", "Lonely", "Anxious" };
-
-    // Tags
-    List<string> _preBuiltTags = new()
-{
-    "Work","Health","Travel","Family","Fitness",
-    "Study","Friends","Hobby","Finance","Personal"
-};
-
-    protected override void OnInitialized()
+    private JournalViewModel _model = new()
     {
-        if (!string.IsNullOrEmpty(ExistingTitle))
-        {
-            _isEditMode = true;
-            LoadExistingEntry();
-        }
-    }
+        EntryDate = DateTime.Today
+    };
+
+    private string EditorId = $"quill-editor-{Guid.NewGuid()}";
+
+    private string _selectedCategory = "";
+    private HashSet<string> _secondaryMoods = new();
+    private HashSet<string> _selectedTags = new();
+
+    // Mood Categories
+    private readonly string[] PositiveMoods =
+    {
+        "Happy", "Excited", "Relaxed", "Grateful", "Confident"
+    };
+
+    private readonly string[] NeutralMoods =
+    {
+        "Calm", "Thoughtful", "Curious", "Nostalgic", "Bored"
+    };
+
+    private readonly string[] NegativeMoods =
+    {
+        "Sad", "Angry", "Stressed", "Lonely", "Anxious"
+    };
+
+    // Predefined Tags
+    private readonly string[] PredefinedTags =
+    {
+        "Work", "Career", "Studies", "Family", "Friends", "Relationships",
+        "Health", "Fitness", "Personal Growth", "Self-care", "Hobbies",
+        "Travel", "Nature", "Finance", "Spirituality", "Birthday",
+        "Holiday", "Vacation", "Celebration", "Exercise", "Reading",
+        "Writing", "Cooking", "Meditation", "Yoga", "Music", "Shopping",
+        "Parenting", "Projects", "Planning", "Reflection"
+    };
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
+        {
             await JS.InvokeVoidAsync("initQuill", EditorId);
+        }
     }
 
-    void LoadExistingEntry()
-    {
-        _title = "Good Day at Work";
-        _content = "Had a productive day at work.";
-        _selectedTags = new() { "Work", "Productivity" };
-    }
-
-    List<string> GetMoodsByCategory(string category)
+    private string[] GetMoodsForCategory(string category)
     {
         return category switch
         {
-            "Positive" => _positiveMoods,
-            "Neutral" => _neutralMoods,
-            "Negative" => _negativeMoods,
-            _ => new()
+            "Positive" => PositiveMoods,
+            "Neutral" => NeutralMoods,
+            "Negative" => NegativeMoods,
+            _ => Array.Empty<string>()
         };
     }
 
-    async Task OnSecondaryMoodChanged(IEnumerable<string> values)
+    private void OnSecondaryMoodsChanged(IEnumerable<string> values)
     {
-        if (values.Count() > 2)
+        var list = values.Where(v => !string.IsNullOrEmpty(v)).ToList();
+
+        if (list.Count > 2)
         {
-            Snackbar.Add("You can select up to 2 secondary moods only.", Severity.Warning);
+            // Keep only the last 2 selected
+            list = list.TakeLast(2).ToList();
+            Snackbar.Add("Maximum 2 secondary moods allowed", Severity.Warning);
+        }
+
+        _secondaryMoods = list.ToHashSet();
+        _model.SecondaryMoods = _secondaryMoods.ToList();
+    }
+
+    private void OnTagsChanged(IEnumerable<string> values)
+    {
+        _selectedTags = values.ToHashSet();
+        _model.Tags = _selectedTags.ToList();
+    }
+
+    private async Task Save()
+    {
+        await _form!.Validate();
+        if (!_form.IsValid)
+        {
+            _formMessage = "Please fill all required fields.";
             return;
         }
 
-        _secondaryMoods = values;
-        await Task.CompletedTask;
-    }
-
-    private Task<IEnumerable<string>> SearchTags(string value, CancellationToken cancellationToken)
-    {
-        var tags = new List<string> { "Blazor", "C#", "MudBlazor", "Razor" };
-        var filtered = tags.Where(x => string.IsNullOrEmpty(value) || x.Contains(value, StringComparison.OrdinalIgnoreCase));
-        return Task.FromResult(filtered.AsEnumerable());
-    }
-
-
-    void AddTag()
-    {
-        if (!string.IsNullOrWhiteSpace(_currentTag) &&
-            !_selectedTags.Contains(_currentTag))
+        if (!UserSession.IsLoggedIn)
         {
-            _selectedTags.Add(_currentTag);
-            _currentTag = "";
+            _formMessage = "You must be logged in.";
+            return;
+        }
+
+        // Get content from Quill editor
+        _model.Content = await JS.InvokeAsync<string>("getQuillHtml");
+
+        // Validate content
+        if (string.IsNullOrWhiteSpace(_model.Content))
+        {
+            _formMessage = "Content is required.";
+            return;
+        }
+
+        var userId = UserSession.CurrentUser!.UserId;
+
+        var result = await JournalService.AddOrUpdateJournalAsync(userId, _model);
+
+        if (result.Success)
+        {
+            Snackbar.Add("Journal saved successfully!", Severity.Success);
+            Navigation.NavigateTo("/journals");
+        }
+        else
+        {
+            _formMessage = result.ErrorMessage ?? "Error saving journal.";
         }
     }
 
-    void QuickAddTag(string tag)
+    private void Cancel()
     {
-        if (!_selectedTags.Contains(tag))
-            _selectedTags.Add(tag);
-    }
-
-    int GetWordCount()
-    {
-        if (string.IsNullOrWhiteSpace(_content))
-            return 0;
-
-        return _content.Split(
-            new[] { ' ', '\n', '\r', '\t' },
-            StringSplitOptions.RemoveEmptyEntries).Length;
-    }
-
-    async Task SaveEntry()
-    {
-        await _form.Validate();
-
-        if (!_formValid)
-            return;
-
-        _isSaving = true;
-
-        await Task.Delay(1000); // simulate save
-
-        Snackbar.Add(
-            _isEditMode ? "Entry updated successfully!" : "Entry saved successfully!",
-            Severity.Success);
-
-        _isSaving = false;
-
-        NavigationManager.NavigateTo("/journals");
-    }
-
-    void Cancel()
-    {
-        NavigationManager.NavigateTo("/journals");
+        Navigation.NavigateTo("/journals");
     }
 }
