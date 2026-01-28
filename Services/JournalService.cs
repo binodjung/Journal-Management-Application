@@ -252,4 +252,168 @@ public class JournalService : IJournalService
 
         return document.GeneratePdf();
     }
+
+    public async Task<AnalyticsModel> GetAnalyticsAsync(int userId)
+    {
+        var allJournals = await _context.Journals
+            .Where(j => j.UserId == userId)
+            .OrderBy(j => j.EntryDate)
+            .ToListAsync();
+
+        var analytics = new AnalyticsModel
+        {
+            TotalEntries = allJournals.Count
+        };
+
+        // Calculate Streaks
+        var (currentStreak, longestStreak) = CalculateStreaks(allJournals);
+        analytics.CurrentStreak = currentStreak;
+        analytics.LongestStreak = longestStreak;
+
+        // Calculate Missed Days (current month)
+        var daysInMonth = DateTime.DaysInMonth(DateTime.Today.Year, DateTime.Today.Month);
+        var journalDatesThisMonth = allJournals
+            .Where(j => j.EntryDate.Year == DateTime.Today.Year && j.EntryDate.Month == DateTime.Today.Month)
+            .Select(j => j.EntryDate.Day)
+            .ToHashSet();
+        analytics.MissedDays = DateTime.Today.Day - journalDatesThisMonth.Count(d => d <= DateTime.Today.Day);
+
+        // Mood Distribution by Category
+        var moodCategories = new Dictionary<string, List<string>>
+        {
+            ["Positive"] = new() { "Happy", "Excited", "Relaxed", "Grateful", "Confident" },
+            ["Neutral"] = new() { "Calm", "Thoughtful", "Curious", "Nostalgic", "Bored" },
+            ["Negative"] = new() { "Sad", "Angry", "Stressed", "Lonely", "Anxious" }
+        };
+
+        var moodCounts = new Dictionary<string, int>
+        {
+            ["Positive"] = 0,
+            ["Neutral"] = 0,
+            ["Negative"] = 0
+        };
+
+        foreach (var journal in allJournals)
+        {
+            foreach (var category in moodCategories)
+            {
+                if (category.Value.Contains(journal.PrimaryMood))
+                {
+                    moodCounts[category.Key]++;
+                    break;
+                }
+            }
+        }
+
+        analytics.MoodDistribution = moodCounts
+            .Select(m => new ChartData { Label = m.Key, Value = m.Value })
+            .ToList();
+
+        // Top Moods
+        var topMoods = allJournals
+            .GroupBy(j => j.PrimaryMood)
+            .Select(g => new ChartData { Label = g.Key, Value = g.Count() })
+            .OrderByDescending(m => m.Value)
+            .Take(5)
+            .ToList();
+        analytics.TopMoods = topMoods;
+
+        // Tag Usage
+        var tagCounts = allJournals
+            .SelectMany(j => j.Tags)
+            .GroupBy(t => t)
+            .Select(g => new ChartData { Label = g.Key, Value = g.Count() })
+            .OrderByDescending(t => t.Value)
+            .Take(5)
+            .ToList();
+        analytics.TagUsage = tagCounts;
+
+        // Word Count Trend (Last 7 days)
+        var last7Days = Enumerable.Range(0, 7)
+            .Select(i => DateTime.Today.AddDays(-6 + i))
+            .ToList();
+
+        analytics.WordCountTrend = last7Days
+            .Select(date =>
+            {
+                return new ChartData
+                {
+                    Label = date.ToString("ddd"),
+                    Value = allJournals.Where(j => j.EntryDate.Date == date.Date).Sum(j => j.WordCount)
+                };
+            })
+            .ToList();
+
+        // Recent Entries
+        analytics.RecentEntries = allJournals
+            .OrderByDescending(j => j.EntryDate)
+            .Take(5)
+            .Select(j => new JournalDisplayModel
+            {
+                JournalId = j.JournalId,
+                Title = j.Title,
+                EntryDate = j.EntryDate,
+                PrimaryMood = j.PrimaryMood,
+                SecondaryMoods = j.SecondaryMoods,
+                Tags = j.Tags,
+                WordCount = j.WordCount
+            })
+            .ToList();
+
+        return analytics;
+    }
+
+    private (int currentStreak, int longestStreak) CalculateStreaks(List<Journal> journals)
+    {
+        if (journals.Count == 0)
+            return (0, 0);
+
+        var dates = journals.Select(j => j.EntryDate.Date).Distinct().OrderBy(d => d).ToList();
+
+        int currentStreak = 0;
+        int longestStreak = 0;
+        int tempStreak = 1;
+
+        // Calculate longest streak
+        for (int i = 1; i < dates.Count; i++)
+        {
+            if ((dates[i] - dates[i - 1]).Days == 1)
+            {
+                tempStreak++;
+            }
+            else
+            {
+                longestStreak = Math.Max(longestStreak, tempStreak);
+                tempStreak = 1;
+            }
+        }
+        longestStreak = Math.Max(longestStreak, tempStreak);
+
+        // Calculate current streak
+        if (dates.Count > 0)
+        {
+            var lastDate = dates[^1];
+            var today = DateTime.Today;
+            var yesterday = today.AddDays(-1);
+
+            if (lastDate == today || lastDate == yesterday)
+            {
+                currentStreak = 1;
+                for (int i = dates.Count - 2; i >= 0; i--)
+                {
+                    if ((dates[i + 1] - dates[i]).Days == 1)
+                    {
+                        currentStreak++;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+
+        return (currentStreak, longestStreak);
+    }
 }
+

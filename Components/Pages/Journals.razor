@@ -6,6 +6,8 @@
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 @inject IJSRuntime JSRuntime
+@inject UserSessionService UserSession
+@inject IDialogService DialogService
 
 <MudContainer Class="mt-6">
 
@@ -40,12 +42,15 @@
             <!-- MOOD -->
             <MudItem xs="12" md="2">
                 <MudSelect T="string"
-                           Label="Search"
-                           Value="_search"
-                           ValueChanged="OnSearchChanged"
+                           Label="Mood"
+                           Value="_selectedMood"
+                           ValueChanged="OnMoodChanged"
 						   Immediate="true"
                            Clearable
                            FullWidth>
+                    <MudSelectItem Value="@("Positive")">Positive</MudSelectItem>
+                    <MudSelectItem Value="@("Neutral")">Neutral</MudSelectItem>
+                    <MudSelectItem Value="@("Negative")">Negative</MudSelectItem>
                 </MudSelect>
             </MudItem>
 
@@ -169,25 +174,7 @@
 
 </MudContainer>
 
-<!-- DELETE DIALOG -->
-<MudDialog @bind-IsVisible="_deleteDialogVisible">
-    <DialogContent>
-        <MudText Typo="Typo.h6">
-            Are you sure you want to delete this journal?
-        </MudText>
-    </DialogContent>
-    <DialogActions>
-        <MudButton Variant="Variant.Text"
-                   OnClick="() => _deleteDialogVisible = false">
-            Cancel
-        </MudButton>
-        <MudButton Color="Color.Error"
-                   Variant="Variant.Filled"
-                   OnClick="DeleteConfirmed">
-            Delete
-        </MudButton>
-    </DialogActions>
-</MudDialog>
+@* Removed Inline Delete Dialog - using DialogService instead *@
 
 @code {
 
@@ -197,12 +184,10 @@
     DateRange _dateRange;
 
     List<JournalDisplayModel> _journals = new();
-    JournalDisplayModel _toDelete;
-    bool _deleteDialogVisible;
 
     int _currentPage = 1;
     int _pageSize = 5;
-    int _userId = 1;
+    int _userId => UserSession.CurrentUser?.UserId ?? 1;
 
     DateTime? _pdfFromDate;
     DateTime? _pdfToDate;
@@ -246,14 +231,19 @@
     void ViewJournal(DateTime d) => NavigationManager.NavigateTo($"/journals/view/{d:yyyy-MM-dd}");
     void EditJournal(DateTime d) => NavigationManager.NavigateTo($"/journals/create?date={d:yyyy-MM-dd}");
 
-    void ConfirmDelete(JournalDisplayModel j) { _toDelete = j; _deleteDialogVisible = true; }
+    async Task ConfirmDelete(JournalDisplayModel j) 
+    { 
+        bool? result = await DialogService.ShowMessageBox(
+            "Delete Journal", 
+            "Are you sure you want to delete this journal entry?", 
+            yesText: "Delete", cancelText: "Cancel");
 
-    async Task DeleteConfirmed()
-    {
-        await JournalService.DeleteJournalAsync(_userId, _toDelete.EntryDate);
-        Snackbar.Add("Journal deleted", Severity.Success);
-        _deleteDialogVisible = false;
-        await LoadJournals();
+        if (result == true)
+        {
+            await JournalService.DeleteJournalAsync(_userId, j.EntryDate);
+            Snackbar.Add("Journal deleted successfully", Severity.Success);
+            await LoadJournals();
+        }
     }
 
     async Task GeneratePdf()

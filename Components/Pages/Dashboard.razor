@@ -1,12 +1,27 @@
 ﻿@page "/dashboard"
 @using MudBlazor
+@using JournalApplication.Services
+@using JournalApplication.Model
+@inject IJournalService JournalService
+@inject UserSessionService UserSession
 
-<MudGrid Class="mt-5 pa-4">
-    <MudItem xs="12">
-        <MudText Typo="Typo.h4" Class="mb-2">Dashboard</MudText>
-        <MudText Typo="Typo.body2" Color="Color.Default">Welcome back! Here's your journaling overview.</MudText>
-    </MudItem>
-</MudGrid>
+@if (_loading)
+{
+    <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-16 text-center">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+        <MudText Typo="Typo.h6" Class="mt-4">Loading your analytics...</MudText>
+    </MudContainer>
+}
+else
+{
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-6">
+    <MudGrid Class="pa-4">
+        <MudItem xs="12">
+            <MudText Typo="Typo.h4" Class="mb-2">📊 Dashboard</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">Welcome back! Here's your journaling overview.</MudText>
+        </MudItem>
+    </MudGrid>
 
 <!-- Quick Stats Cards -->
 <MudGrid Class="mt-6" Spacing="3">
@@ -131,40 +146,56 @@
 
     <!-- Most Frequent Mood -->
     <MudItem xs="12" md="6">
-        <MudPaper Class="pa-4" Elevation="2">
+        <MudPaper Class="pa-6 rounded-xl" Elevation="3">
             <MudText Typo="Typo.h6" Class="mb-3">Top Moods</MudText>
             <MudChart ChartType="ChartType.Bar" 
                       Width="100%" 
                       Height="300px"
                       ChartOptions="@_chartOptions"
-                      InputData="@_topMoodsData" 
-                      InputLabels="@_topMoodsLabels" />
+                      @bind-SelectedIndex="_moodIdx"
+                      XAxisLabels="@_topMoodsLabels">
+                <ChildContent>
+                    @foreach (var mood in _topMoodsSeries)
+                    {
+                        <MudChartSeries Name="@mood.Name" Data="@mood.Data" />
+                    }
+                </ChildContent>
+            </MudChart>
         </MudPaper>
     </MudItem>
 
     <!-- Most Used Tags -->
     <MudItem xs="12" md="6">
-        <MudPaper Class="pa-4" Elevation="2">
+        <MudPaper Class="pa-6 rounded-xl" Elevation="3">
             <MudText Typo="Typo.h6" Class="mb-3">Most Used Tags</MudText>
             <MudChart ChartType="ChartType.Bar" 
                       Width="100%" 
                       Height="300px"
                       ChartOptions="@_chartOptions"
-                      InputData="@_tagData" 
-                      InputLabels="@_tagLabels" />
+                      XAxisLabels="@_tagLabels">
+                <ChildContent>
+                    @foreach (var tag in _tagSeries)
+                    {
+                        <MudChartSeries Name="@tag.Name" Data="@tag.Data" />
+                    }
+                </ChildContent>
+            </MudChart>
         </MudPaper>
     </MudItem>
 
     <!-- Word Count Trend -->
-    <MudItem xs="12" md="6">
-        <MudPaper Class="pa-4" Elevation="2">
-            <MudText Typo="Typo.h6" Class="mb-3">Word Count Trends</MudText>
+    <MudItem xs="12" md="12">
+        <MudPaper Class="pa-6 rounded-xl" Elevation="3">
+            <MudText Typo="Typo.h6" Class="mb-3">Word Count Trends (Last 7 Days)</MudText>
             <MudChart ChartType="ChartType.Line" 
                       Width="100%" 
                       Height="300px"
                       ChartOptions="@_lineChartOptions"
-                      InputData="@_wordCountData" 
-                      InputLabels="@_wordCountLabels" />
+                      XAxisLabels="@_wordCountLabels">
+                <ChildContent>
+                    <MudChartSeries Name="Words" Data="@_wordCountData" />
+                </ChildContent>
+            </MudChart>
         </MudPaper>
     </MudItem>
 </MudGrid>
@@ -192,11 +223,11 @@
                         <div>
                             <MudText Typo="Typo.subtitle1">@entry.Title</MudText>
                             <MudText Typo="Typo.body2" Color="Color.Default">
-                                @entry.Date.ToString("MMM dd, yyyy")
+                                @entry.EntryDate.ToString("MMM dd, yyyy")
                             </MudText>
                         </div>
                         <div class="d-flex align-center gap-2">
-                            <MudChip T="string" Size="Size.Small" Color="GetMoodColor(entry.MoodCategory)">
+                            <MudChip T="string" Size="Size.Small" Color="GetMoodColor(entry.PrimaryMood)">
                                 @entry.PrimaryMood
                             </MudChip>
 
@@ -211,30 +242,35 @@
     </MudItem>
 </MudGrid>
 
+</MudContainer>
+}
+
 @code {
     [Inject] NavigationManager NavigationManager { get; set; }
 
     // Stats
-    int _currentStreak = 5;
-    int _longestStreak = 12;
-    int _totalEntries = 24;
-    int _missedDays = 3;
+    int _currentStreak = 0;
+    int _longestStreak = 0;
+    int _totalEntries = 0;
+    int _missedDays = 0;
 
     // Mood Distribution (Pie Chart)
-    double[] _moodData = { 45, 30, 25 };
-    string[] _moodLabels = { "Positive", "Neutral", "Negative" };
+    double[] _moodData = Array.Empty<double>();
+    string[] _moodLabels = Array.Empty<string>();
 
     // Top Moods (Bar Chart)
-    double[] _topMoodsData = { 8, 6, 5, 3, 2 };
-    string[] _topMoodsLabels = { "Happy", "Calm", "Excited", "Stressed", "Grateful" };
+    List<ChartSeries> _topMoodsSeries = new();
+    string[] _topMoodsLabels = Array.Empty<string>();
 
     // Most Used Tags
-    double[] _tagData = { 12, 9, 7, 5, 4 };
-    string[] _tagLabels = { "Work", "Health", "Family", "Fitness", "Travel" };
+    List<ChartSeries> _tagSeries = new();
+    string[] _tagLabels = Array.Empty<string>();
 
     // Word Count Trends
-    double[] _wordCountData = { 150, 180, 165, 200, 175, 190, 220 };
-    string[] _wordCountLabels = { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
+    double[] _wordCountData = Array.Empty<double>();
+    string[] _wordCountLabels = Array.Empty<string>();
+
+    int _moodIdx = -1;
 
     // Chart Options
     ChartOptions _chartOptions = new()
@@ -251,59 +287,78 @@
     };
 
     // Recent Entries
-    List<JournalEntry> _recentEntries = new()
-    {
-        new JournalEntry
-        {
-            Date = DateTime.Today,
-            Title = "Good Day at Work",
-            PrimaryMood = "Happy",
-            MoodCategory = "Positive"
-        },
-        new JournalEntry
-        {
-            Date = DateTime.Today.AddDays(-1),
-            Title = "Workout Session",
-            PrimaryMood = "Excited",
-            MoodCategory = "Positive"
-        },
-        new JournalEntry
-        {
-            Date = DateTime.Today.AddDays(-2),
-            Title = "Family Time",
-            PrimaryMood = "Calm",
-            MoodCategory = "Neutral"
-        },
-        new JournalEntry
-        {
-            Date = DateTime.Today.AddDays(-3),
-            Title = "Busy Day",
-            PrimaryMood = "Stressed",
-            MoodCategory = "Negative"
-        }
-    };
+    List<JournalDisplayModel> _recentEntries = new();
+    bool _loading = true;
 
-    Color GetMoodColor(string moodCategory)
+    protected override async Task OnInitializedAsync()
     {
-        return moodCategory switch
+        _loading = true;
+        
+        var userId = UserSession.CurrentUser?.UserId ?? 1;
+        var analytics = await JournalService.GetAnalyticsAsync(userId);
+
+        // Map Stats
+        _currentStreak = analytics.CurrentStreak;
+        _longestStreak = analytics.LongestStreak;
+        _totalEntries = analytics.TotalEntries;
+        _missedDays = analytics.MissedDays;
+
+        // Map Mood Distribution
+        _moodData = analytics.MoodDistribution.Select(m => m.Value).ToArray();
+        _moodLabels = analytics.MoodDistribution.Select(m => m.Label).ToArray();
+
+        // Map Top Moods
+        _topMoodsSeries = new List<ChartSeries>
         {
-            "Positive" => Color.Success,
-            "Neutral" => Color.Default,
-            "Negative" => Color.Error,
-            _ => Color.Default
+            new ChartSeries { Name = "Moods", Data = analytics.TopMoods.Select(m => m.Value).ToArray() }
         };
+        _topMoodsLabels = analytics.TopMoods.Select(m => m.Label).ToArray();
+
+        // Map Tag Usage
+        _tagSeries = new List<ChartSeries>
+        {
+            new ChartSeries { Name = "Tags", Data = analytics.TagUsage.Select(t => t.Value).ToArray() }
+        };
+        _tagLabels = analytics.TagUsage.Select(t => t.Label).ToArray();
+
+        // Map Word Count Trend
+        _wordCountData = analytics.WordCountTrend.Select(w => w.Value).ToArray();
+        _wordCountLabels = analytics.WordCountTrend.Select(w => w.Label).ToArray();
+
+        // Map Recent Entries
+        _recentEntries = analytics.RecentEntries;
+
+        _loading = false;
+        StateHasChanged();
     }
 
-    void ViewEntry(JournalEntry entry)
+    Color GetMoodColor(string primaryMood)
     {
-        NavigationManager.NavigateTo($"/journals/{entry.Title.Replace(" ", "-")}");
+        var moodCategories = new Dictionary<string, List<string>>
+        {
+            ["Positive"] = new() { "Happy", "Excited", "Relaxed", "Grateful", "Confident" },
+            ["Neutral"] = new() { "Calm", "Thoughtful", "Curious", "Nostalgic", "Bored" },
+            ["Negative"] = new() { "Sad", "Angry", "Stressed", "Lonely", "Anxious" }
+        };
+
+        foreach (var category in moodCategories)
+        {
+            if (category.Value.Contains(primaryMood))
+            {
+                return category.Key switch
+                {
+                    "Positive" => Color.Success,
+                    "Neutral" => Color.Default,
+                    "Negative" => Color.Error,
+                    _ => Color.Default
+                };
+            }
+        }
+        return Color.Default;
     }
 
-    public class JournalEntry
+    void ViewEntry(JournalDisplayModel entry)
     {
-        public DateTime Date { get; set; }
-        public string Title { get; set; }
-        public string PrimaryMood { get; set; }
-        public string MoodCategory { get; set; }
+        NavigationManager.NavigateTo($"/journals/view/{entry.EntryDate:yyyy-MM-dd}");
     }
 }

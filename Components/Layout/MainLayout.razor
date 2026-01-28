@@ -1,65 +1,46 @@
 ﻿@inherits LayoutComponentBase
+@using JournalApplication.Services
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
+@inject UserSessionService UserSession
 
 <MudThemeProvider IsDarkMode="@_isDarkMode" Theme="@_customTheme" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
-<MudLayout FixedHeader="true">
+<MudLayout>
     <!-- AppBar -->
-    <MudAppBar Elevation="1" Color="Color.Primary">
-        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
-                       Color="Color.Inherit"
-                       Edge="Edge.Start"
-                       OnClick="GoBack" />
+    <MudAppBar Elevation="1" Color="Color.Primary" Fixed="true">
         <MudIconButton Icon="@Icons.Material.Filled.Menu"
                        Color="Color.Inherit"
                        Edge="Edge.Start"
                        OnClick="ToggleDrawer" />
-        <MudText Typo="Typo.h6">Welcome, Binod!</MudText>
+        <MudText Typo="Typo.h6" Class="ml-3">Journal Application</MudText>
         <MudSpacer />
-        <MudSpacer />
-
-        <MudIconButton Icon="@(_isDarkMode 
-        ? Icons.Material.Filled.LightMode 
-        : Icons.Material.Filled.DarkMode)"
-               Color="Color.Inherit"
-               OnClick="ToggleTheme" />
-        <!-- Profile Section -->
-        <MudMenu AnchorOrigin="Origin.BottomRight"
-                 TransformOrigin="Origin.TopRight"
-                 Dense="true">
+        
+        <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
+                       Color="Color.Inherit"
+                       OnClick="ToggleTheme" />
+                       
+        <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
             <ActivatorContent>
-                <MudChip T="string" Color="Color.Secondary"
-                         Icon="@Icons.Material.Filled.Person"
-                         Variant="Variant.Filled"
-                         Style="cursor: pointer;">
-                    @CurrentUser.Name
+                <MudChip T="string" Color="Color.Secondary" Icon="@Icons.Material.Filled.Person" Variant="Variant.Filled">
+                    @(UserSession.CurrentUser?.Name ?? "User")
                 </MudChip>
             </ActivatorContent>
             <ChildContent>
-                <MudMenuItem Icon="@Icons.Material.Filled.AccountCircle"
-                             OnClick="NavigateToProfile">
-                    Profile
-                </MudMenuItem>
-                <MudDivider />
-                <MudMenuItem Icon="@Icons.Material.Filled.Logout"
-                             OnClick="Logout"
-                             IconColor="Color.Error">
-                    Logout
-                </MudMenuItem>
+                <MudMenuItem OnClick="NavigateToProfile">Profile</MudMenuItem>
+                <MudMenuItem OnClick="Logout" IconColor="Color.Error">Logout</MudMenuItem>
             </ChildContent>
         </MudMenu>
     </MudAppBar>
 
-    <!-- Sidebar / Drawer -->
-    <MudDrawer @bind-Open="_drawerOpen"
-               Variant="DrawerVariant.Persistent"
-               Elevation="1">
-        <MudDrawerHeader>
-            <MudText Typo="Typo.h6">Menu</MudText>
+    <!-- Sidebar -->
+    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2" Variant="DrawerVariant.Responsive">
+        <MudDrawerHeader Class="d-flex align-center py-4">
+             <MudIcon Icon="@Icons.Material.Filled.AutoGraph" Color="Color.Primary" Class="mr-2"/>
+             <MudText Typo="Typo.h6"><b>Main Menu</b></MudText>
         </MudDrawerHeader>
         <MudNavMenu>
             @foreach (var item in MenuItems)
@@ -74,7 +55,7 @@
     </MudDrawer>
 
     <!-- Main Content -->
-    <MudMainContent Class="pa-4">
+    <MudMainContent Class="pt-16 px-4 pb-4">
         @Body
     </MudMainContent>
 </MudLayout>

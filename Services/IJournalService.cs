@@ -22,9 +22,11 @@ public interface IJournalService
         int page,
         int pageSize);
     
-        Task<byte[]> GenerateJournalPdfAsync(
+    Task<byte[]> GenerateJournalPdfAsync(
     int userId,
     DateTime fromDate,
     DateTime toDate);
+
+    Task<AnalyticsModel> GetAnalyticsAsync(int userId);
 
 }
